@@ -13,7 +13,6 @@ function getRoomId() {
 const ROOM_ID = getRoomId();
 document.getElementById("roomId").textContent = ROOM_ID;
 
-// --- ИМЯ ПОЛЬЗОВАТЕЛЯ (ТОЛЬКО LET!) ---
 let userName = localStorage.getItem("wp_userName");
 if (!userName) {
   userName = "Гость" + Math.floor(Math.random() * 1000);
@@ -65,7 +64,7 @@ function onPlayerStateChange(event) {
   if (!videoId) return;
   const currentTime = ytPlayer.getCurrentTime();
   
-  firebaseSet(firebaseRef(firebaseDB, 'rooms/' + ROOM_ID + '/videoState'), {
+  window.firebaseSet(window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/videoState'), {
     videoId: videoId,
     state: event.data, 
     time: currentTime,
@@ -87,8 +86,8 @@ document.getElementById("loadVideo").addEventListener("click", () => {
   }
   ytPlayer.loadVideoById(parsed.id);
   
-  if (typeof firebaseSet !== 'undefined') {
-      firebaseSet(firebaseRef(firebaseDB, 'rooms/' + ROOM_ID + '/videoState'), {
+  if (typeof window.firebaseSet !== 'undefined') {
+      window.firebaseSet(window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/videoState'), {
         videoId: parsed.id,
         state: 1,
         time: 0,
@@ -135,28 +134,28 @@ window.addEventListener('firebase-ready', () => {
   }
   updateProfileUI();
 
-  const userPresenceRef = firebaseRef(firebaseDB, `rooms/${ROOM_ID}/users/${sessionId}`);
+  const userPresenceRef = window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/users/${sessionId}`);
 
   document.getElementById("profileBtn").addEventListener("click", () => {
     const newName = prompt("Введите ваше имя:", userName);
     if (newName && newName.trim() !== "") {
-      userName = newName.trim(); // Меняем let-переменную, ошибки не будет
+      userName = newName.trim();
       localStorage.setItem("wp_userName", userName);
       updateProfileUI();
       addSystemMessage(`✏️ Вы сменили имя на: ${userName}`);
       
-      set(userPresenceRef, { name: userName, joinedAt: Date.now() });
+      window.set(userPresenceRef, { name: userName, joinedAt: Date.now() }); // window.set
     }
   });
 
   // --- 2. УЧАСТНИКИ ---
-  set(userPresenceRef, { name: userName, joinedAt: Date.now() });
-  onDisconnect(userPresenceRef).remove();
+  window.set(userPresenceRef, { name: userName, joinedAt: Date.now() }); // window.set
+  window.onDisconnect(userPresenceRef).remove(); // window.onDisconnect
 
-  const usersListRef = firebaseRef(firebaseDB, `rooms/${ROOM_ID}/users`);
+  const usersListRef = window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/users`);
   const usersListElement = document.getElementById("usersList");
 
-  firebaseOnValue(usersListRef, (snapshot) => {
+  window.firebaseOnValue(usersListRef, (snapshot) => {
     const usersData = snapshot.val();
     if (!usersData) {
       usersListElement.innerHTML = '<li style="color: var(--text-muted); font-style: italic;">Пока никого нет...</li>';
@@ -175,8 +174,8 @@ window.addEventListener('firebase-ready', () => {
   });
 
   // --- 3. СИНХРОНИЗАЦИЯ ВИДЕО ---
-  const videoStateRef = firebaseRef(firebaseDB, 'rooms/' + ROOM_ID + '/videoState');
-  firebaseOnValue(videoStateRef, (snapshot) => {
+  const videoStateRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/videoState');
+  window.firebaseOnValue(videoStateRef, (snapshot) => {
     const data = snapshot.val();
     if (!data || !data.videoId || !ytPlayer) return;
 
@@ -208,7 +207,7 @@ window.addEventListener('firebase-ready', () => {
   const chatMessages = document.getElementById("chatMessages");
   const chatForm = document.getElementById("chatForm");
   const chatInput = document.getElementById("chatInput");
-  const messagesRef = firebaseRef(firebaseDB, 'rooms/' + ROOM_ID + '/messages');
+  const messagesRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/messages');
 
   function addMessageToHTML(author, text) {
     const el = document.createElement("div");
@@ -222,11 +221,11 @@ window.addEventListener('firebase-ready', () => {
     e.preventDefault();
     const text = chatInput.value.trim();
     if (!text) return;
-    firebasePush(messagesRef, { author: userName, text: text, timestamp: Date.now() });
+    window.firebasePush(messagesRef, { author: userName, text: text, timestamp: Date.now() });
     chatInput.value = "";
   });
 
-  firebaseOnChildAdded(messagesRef, (snapshot) => {
+  window.firebaseOnChildAdded(messagesRef, (snapshot) => {
     const msg = snapshot.val();
     if (msg) addMessageToHTML(msg.author, msg.text);
   });
