@@ -57,7 +57,7 @@
     </main>
   </div>
 
-  <!-- 1. Сначала подключаем API YouTube -->
+  <!-- 1. API YouTube -->
   <script src="https://www.youtube.com/iframe_api"></script>
 
   <!-- 2. Firebase -->
@@ -78,7 +78,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Передаем в глобальную область видимости
     window.firebaseDB = db;
     window.firebaseRef = ref;
     window.firebasePush = push;
@@ -87,7 +86,6 @@
     window.firebaseOnValue = onValue;
     window.onDisconnect = onDisconnect;
 
-    // Делаем функции глобальными для обычного script.js (без window)
     firebaseDB = db;
     firebaseRef = ref;
     firebasePush = push;
@@ -96,11 +94,10 @@
     firebaseOnValue = onValue;
     onDisconnect = onDisconnect;
     
-    // Мостик для YouTube API
     window.dispatchEvent(new Event('firebase-ready'));
   </script>
 
-  <!-- 3. Твой основной скрипт. Обрати внимание на ?v=2 в конце! -->
-    <script src="script.js?v=3"></script>
+  <!-- 3. Основной скрипт (версия ?v=4 для сброса кэша) -->
+  <script src="script.js?v=4"></script>
 </body>
 </html>
