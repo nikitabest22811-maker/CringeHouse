@@ -42,7 +42,9 @@
 
         <div class="tab-content active" id="chatTab">
           <div class="chat-messages" id="chatMessages"></div>
-          <form class="chat-form" id="chatForm">
+          
+          <!-- ВОТ ЗДЕСЬ ДОБАВЛЕНА ЗАЩИТА: onsubmit="return false;" -->
+          <form class="chat-form" id="chatForm" onsubmit="return false;">
             <input type="text" id="chatInput" placeholder="Написать сообщение...">
             <button type="submit" class="btn btn-primary">➤</button>
           </form>
@@ -78,7 +80,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Передаем ТОЛЬКО в window (без дублирования переменных)
     window.firebaseDB = db;
     window.firebaseRef = ref;
     window.firebasePush = push;
@@ -91,7 +92,7 @@
     window.dispatchEvent(new Event('firebase-ready'));
   </script>
 
-  <!-- 3. Основной скрипт (версия ?v=5 для сброса кэша) -->
-  <script src="script.js?v=5"></script>
+  <!-- 3. Основной скрипт (версия ?v=7) -->
+  <script src="script.js?v=7"></script>
 </body>
 </html>
