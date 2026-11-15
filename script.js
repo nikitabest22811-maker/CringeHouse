@@ -64,6 +64,7 @@ function onPlayerStateChange(event) {
   if (!videoId) return;
   const currentTime = ytPlayer.getCurrentTime();
   
+  // Обращаемся через window.
   window.firebaseSet(window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/videoState'), {
     videoId: videoId,
     state: event.data, 
@@ -144,13 +145,13 @@ window.addEventListener('firebase-ready', () => {
       updateProfileUI();
       addSystemMessage(`✏️ Вы сменили имя на: ${userName}`);
       
-      window.set(userPresenceRef, { name: userName, joinedAt: Date.now() }); // window.set
+      window.set(userPresenceRef, { name: userName, joinedAt: Date.now() }); 
     }
   });
 
   // --- 2. УЧАСТНИКИ ---
-  window.set(userPresenceRef, { name: userName, joinedAt: Date.now() }); // window.set
-  window.onDisconnect(userPresenceRef).remove(); // window.onDisconnect
+  window.set(userPresenceRef, { name: userName, joinedAt: Date.now() });
+  window.onDisconnect(userPresenceRef).remove();
 
   const usersListRef = window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/users`);
   const usersListElement = document.getElementById("usersList");
@@ -221,6 +222,8 @@ window.addEventListener('firebase-ready', () => {
     e.preventDefault();
     const text = chatInput.value.trim();
     if (!text) return;
+    
+    // ВОТ ЗДЕСЬ ТЕПЕРЬ ВСЁ ЧЕРЕЗ WINDOW
     window.firebasePush(messagesRef, { author: userName, text: text, timestamp: Date.now() });
     chatInput.value = "";
   });
