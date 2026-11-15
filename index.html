@@ -78,6 +78,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
+    // Передаем ТОЛЬКО в window (без дублирования переменных)
     window.firebaseDB = db;
     window.firebaseRef = ref;
     window.firebasePush = push;
@@ -86,18 +87,11 @@
     window.firebaseOnValue = onValue;
     window.onDisconnect = onDisconnect;
 
-    firebaseDB = db;
-    firebaseRef = ref;
-    firebasePush = push;
-    firebaseOnChildAdded = onChildAdded;
-    firebaseSet = set;
-    firebaseOnValue = onValue;
-    onDisconnect = onDisconnect;
-    
+    // Мостик для YouTube API
     window.dispatchEvent(new Event('firebase-ready'));
   </script>
 
-  <!-- 3. Основной скрипт (версия ?v=4 для сброса кэша) -->
-  <script src="script.js?v=4"></script>
+  <!-- 3. Основной скрипт (версия ?v=5 для сброса кэша) -->
+  <script src="script.js?v=5"></script>
 </body>
 </html>
