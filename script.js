@@ -13,6 +13,7 @@ function getRoomId() {
 const ROOM_ID = getRoomId();
 document.getElementById("roomId").textContent = ROOM_ID;
 
+// ВАЖНО: здесь должно быть let, а не const
 let userName = localStorage.getItem("wp_userName");
 if (!userName) {
   userName = "Гость" + Math.floor(Math.random() * 1000);
@@ -125,7 +126,6 @@ document.querySelectorAll(".tab").forEach((tab) => {
 window.addEventListener('firebase-ready', () => {
   console.log("Firebase готов, настраиваем профиль, участников и чат...");
   
-  // Объявляем ID сессии в самом начале, чтобы он был доступен везде
   const sessionId = Math.random().toString(36).substring(2, 9);
 
   // --- 1. ПРОФИЛЬ ---
@@ -140,7 +140,7 @@ window.addEventListener('firebase-ready', () => {
   document.getElementById("profileBtn").addEventListener("click", () => {
     const newName = prompt("Введите ваше имя:", userName);
     if (newName && newName.trim() !== "") {
-      userName = newName.trim();
+      userName = newName.trim(); // Вот здесь мы меняем let-переменную, это разрешено
       localStorage.setItem("wp_userName", userName);
       updateProfileUI();
       addSystemMessage(`✏️ Вы сменили имя на: ${userName}`);
