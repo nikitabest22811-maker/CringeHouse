@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>☽ ℭ𝔯𝔦𝔫𝔤𝔢 ℌ𝔬𝔲𝔰𝔢 ☾</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Шапка -->
+    <header class="header">
+      <div class="logo">☽ ℭ𝔯𝔦𝔫𝔤𝔢 ℌ𝔬𝔲𝔰𝔢 ☾</div>
+      <div class="room-info">
+        <span>Комната: <b id="roomId">—</b></span>
+        <button id="profileBtn" class="btn btn-small" style="background: var(--accent-2); color: white; border: none;">👤 Профиль</button>
+        <button id="copyLink" class="btn btn-small">Скопировать ссылку</button>
+      </div>
+    </header>
+
+    <main class="main">
+      <!-- Левая панель: видео -->
+      <section class="video-section">
+        <div class="url-bar">
+          <input type="text" id="videoUrl" placeholder="Вставь ссылку на YouTube...">
+          <button id="loadVideo" class="btn btn-primary">Загрузить</button>
+        </div>
+
+        <div class="player-wrapper">
+          <!-- Сюда API YouTube вставит плеер -->
+          <div id="player"></div>
+        </div>
+      </section>
+
+      <!-- Правая панель: чат и участники -->
+      <aside class="sidebar">
+        <div class="tabs">
+          <button class="tab active" data-tab="chat">💬 Чат</button>
+          <button class="tab" data-tab="users">👥 Участники</button>
+        </div>
+
+        <div class="tab-content active" id="chatTab">
+          <div class="chat-messages" id="chatMessages"></div>
+          <form class="chat-form" id="chatForm">
+            <input type="text" id="chatInput" placeholder="Написать сообщение...">
+            <button type="submit" class="btn btn-primary">➤</button>
+          </form>
+        </div>
+
+        <div class="tab-content" id="usersTab">
+          <ul class="users-list" id="usersList">
+            <!-- Список будет заполняться скриптом -->
+          </ul>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- 1. Сначала подключаем API YouTube -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+
+  <!-- 2. Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+    import { getDatabase, ref, push, onChildAdded, set, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBMnGQXMxJWUGALmNGVItNWKB5ubSiyg5M",
+      authDomain: "watch-party-6986e.firebaseapp.com",
+      databaseURL: "https://watch-party-6986e-default-rtdb.firebaseio.com",
+      projectId: "watch-party-6986e",
+      storageBucket: "watch-party-6986e.firebasestorage.app",
+      messagingSenderId: "94169155669",
+      appId: "1:94169155669:web:aed4ef0df9a93aa6af6cdc"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Передаем в глобальную область видимости
+    window.firebaseDB = db;
+    window.firebaseRef = ref;
+    window.firebasePush = push;
+    window.firebaseOnChildAdded = onChildAdded;
+    window.firebaseSet = set;
+    window.firebaseOnValue = onValue;
+    window.onDisconnect = onDisconnect;
+
+    // Делаем функции глобальными для обычного script.js (без window)
+    firebaseDB = db;
+    firebaseRef = ref;
+    firebasePush = push;
+    firebaseOnChildAdded = onChildAdded;
+    firebaseSet = set;
+    firebaseOnValue = onValue;
+    onDisconnect = onDisconnect;
+    
+    // Мостик для YouTube API
+    window.dispatchEvent(new Event('firebase-ready'));
+  </script>
+
+  <!-- 3. Твой основной скрипт -->
+  <script src="script.js"></script>
+</body>
+</html>
