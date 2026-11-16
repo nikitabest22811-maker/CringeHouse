@@ -171,7 +171,7 @@ window.addEventListener('firebase-ready', () => {
 
   const userPresenceRef = window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/users/${sessionId}`);
   
-  const avatars = ['👤', '🦊', '🐼', '🐸', '🐯', '🐨', '🦁', '🐵', '🐧', '🦉', '🦄', '🐙', '🦖', '🐺', '🐻', '🐷'];
+  const avatars = ['👤', '💩', '🤡', '🗿', '👾', '🎮', '🕹️', '👽', '🤖', '👻', '💀', '😈', '🔥', '⚡', '🚀', '💅'];
   let myAvatar = localStorage.getItem("wp_avatar") || '👤';
 
   const profileModal = document.getElementById("profileModal");
