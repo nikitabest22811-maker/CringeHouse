@@ -202,12 +202,38 @@ window.addEventListener('firebase-ready', () => {
     }
   });
 
-  // --- 4. ЧАТ С ИСТОРИЕЙ И РЕАКЦИЯМИ ---
+    // --- 4. ЧАТ С ИСТОРИЕЙ И РЕАКЦИЯМИ ---
   const chatMessages = document.getElementById("chatMessages");
   const chatForm = document.getElementById("chatForm");
   const chatInput = document.getElementById("chatInput");
   const messagesRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/messages');
 
+  // Список эмодзи для реакций
+  const reactionEmojis = ['❤️', '😂', '🔥', '👍', '😮', '😢', '🎉'];
+
+  // Создаем контекстное меню (скрытое)
+  const contextMenu = document.createElement('div');
+  contextMenu.className = 'reaction-context-menu';
+  contextMenu.style.display = 'none';
+  reactionEmojis.forEach(emoji => {
+    const span = document.createElement('span');
+    span.textContent = emoji;
+    span.onclick = (e) => {
+      e.stopPropagation();
+      const msgId = contextMenu.dataset.msgId;
+      if (msgId) window.toggleReaction(msgId, emoji);
+      contextMenu.style.display = 'none';
+    };
+    contextMenu.appendChild(span);
+  });
+  document.body.appendChild(contextMenu);
+
+  // Закрываем меню при клике в любом другом месте
+  document.addEventListener('click', () => {
+    contextMenu.style.display = 'none';
+  });
+
+  // Функция отрисовки сообщения
   function renderMessage(msgId, data) {
     if (document.getElementById(`msg-${msgId}`)) return;
 
@@ -218,19 +244,39 @@ window.addEventListener('firebase-ready', () => {
     const isMe = data.author === userName;
     if (isMe) el.classList.add("my-message");
 
-    const likesCount = data.reactions && data.reactions.like ? data.reactions.like : 0;
-    if (likesCount > 0) el.classList.add("has-likes");
+    // Обработка реакций
+    let reactionsHtml = '';
+    if (data.reactions) {
+      const reactionCounts = {};
+      // Считаем, сколько раз каждая реакция была поставлена
+      Object.values(data.reactions).forEach(emoji => {
+        reactionCounts[emoji] = (reactionCounts[emoji] || 0) + 1;
+      });
+
+      for (const [emoji, count] of Object.entries(reactionCounts)) {
+        // Проверяем, ставил ли текущий пользователь эту реакцию
+        const myReaction = data.reactions[sessionId] === emoji;
+        reactionsHtml += `<div class="reaction-badge ${myReaction ? 'my-reaction' : ''}" onclick="window.toggleReaction('${msgId}', '${emoji}')">${emoji} ${count}</div>`;
+      }
+    }
 
     el.innerHTML = `
       <div class="msg-author">${data.author}</div>
       <div class="msg-text">${data.text}</div>
-      <div class="msg-reactions">
-        <button class="reaction-btn" onclick="window.toggleLike('${msgId}', ${likesCount})">
-          ❤️ <span id="like-count-${msgId}">${likesCount > 0 ? likesCount : ''}</span>
-        </button>
-      </div>
+      <div class="msg-reactions-display">${reactionsHtml}</div>
     `;
     
+    // Добавляем обработчик правой кнопки мыши
+    el.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      contextMenu.dataset.msgId = msgId;
+      
+      // Позиционируем меню рядом с курсором
+      contextMenu.style.left = `${e.pageX}px`;
+      contextMenu.style.top = `${e.pageY - 40}px`;
+      contextMenu.style.display = 'flex';
+    });
+
     chatMessages.appendChild(el);
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
@@ -256,17 +302,64 @@ window.addEventListener('firebase-ready', () => {
       author: userName, 
       text: text, 
       timestamp: Date.now(),
-      reactions: { like: 0 }
+      reactions: {} // Теперь это объект для реакций пользователей
     });
     
     chatInput.value = "";
   });
 
-  window.toggleLike = function(msgId, currentLikes) {
-    const likeRef = window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/messages/${msgId}/reactions/like`);
-    const newCount = currentLikes > 0 ? currentLikes - 1 : 1;
-    window.firebaseSet(likeRef, newCount);
+  // Функция для постановки/снятия реакции
+  window.toggleReaction = function(msgId, emoji) {
+    const reactionRef = window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/messages/${msgId}/reactions/${sessionId}`);
+    
+    // Получаем текущую реакцию пользователя
+    window.firebaseOnValue(reactionRef, (snapshot) => {
+      const currentEmoji = snapshot.val();
+      
+      if (currentEmoji === emoji) {
+        // Если нажал на ту же реакцию - убираем её
+        window.firebaseSet(reactionRef, null);
+      } else {
+        // Иначе ставим новую
+        window.firebaseSet(reactionRef, emoji);
+      }
+      
+      // Отписываемся от прослушивания, чтобы не было утечек памяти
+      window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/messages/${msgId}/reactions/${sessionId}`).off();
+    }, { onlyOnce: true });
   };
+
+  // --- 5. ЭМОДЗИ ДЛЯ ВВОДА ТЕКСТА ---
+  const emojiList = [
+    '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾', '👋', '🤚', '🖐', '✋', '🖖', '👌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '🔥', '💯', '💢', '💥', '💫', '💦', '💨', '🕳', '💣', '💬', '👁️‍🗨️'
+  ];
+
+  const emojiBtn = document.getElementById('emojiBtn');
+  const emojiPicker = document.getElementById('emojiPicker');
+  const chatInputElement = document.getElementById('chatInput');
+
+  if (emojiPicker && emojiBtn) {
+    emojiList.forEach(emoji => {
+      const span = document.createElement('span');
+      span.textContent = emoji;
+      span.addEventListener('click', () => {
+        chatInputElement.value += emoji; 
+        chatInputElement.focus();        
+      });
+      emojiPicker.appendChild(span);
+    });
+
+    emojiBtn.addEventListener('click', (e) => {
+      e.preventDefault(); 
+      emojiPicker.style.display = (emojiPicker.style.display === 'none' || emojiPicker.style.display === '') ? 'grid' : 'none';
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
+        emojiPicker.style.display = 'none';
+      }
+    });
+  }
 });
 
 // ---------- ЭМОДЗИ ДЛЯ ЧАТА ----------
