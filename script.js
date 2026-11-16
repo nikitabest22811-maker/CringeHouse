@@ -233,3 +233,60 @@ window.addEventListener('firebase-ready', () => {
     if (msg) addMessageToHTML(msg.author, msg.text);
   });
 });
+// ---------- ЭМОДЗИ ДЛЯ ЧАТА ----------
+const emojiList = [
+  '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', 
+  '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', 
+  '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', 
+  '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', 
+  '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', 
+  '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', 
+  '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', 
+  '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', 
+  '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', 
+  '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', 
+  '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾',
+  '👋', '🤚', '🖐', '✋', '🖖', '👌', '🤏', '✌️', '🤞', '🤟', 
+  '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', 
+  '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏',
+  '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', 
+  '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '🔥',
+  '💯', '💢', '💥', '💫', '💦', '💨', '🕳', '💣', '💬', '👁️‍🗨️'
+];
+
+// Находим элементы
+const emojiBtn = document.getElementById('emojiBtn');
+const emojiPicker = document.getElementById('emojiPicker');
+const chatInputElement = document.getElementById('chatInput');
+
+// Заполняем панель эмодзи
+if (emojiPicker) {
+  emojiList.forEach(emoji => {
+    const span = document.createElement('span');
+    span.textContent = emoji;
+    span.addEventListener('click', () => {
+      chatInputElement.value += emoji; // Добавляем эмодзи в поле ввода
+      chatInputElement.focus();        // Возвращаем фокус
+    });
+    emojiPicker.appendChild(span);
+  });
+}
+
+// Открываем/закрываем панель
+if (emojiBtn) {
+  emojiBtn.addEventListener('click', (e) => {
+    e.preventDefault(); // Чтобы кнопка не отправляла форму
+    if (emojiPicker.style.display === 'none' || emojiPicker.style.display === '') {
+      emojiPicker.style.display = 'grid';
+    } else {
+      emojiPicker.style.display = 'none';
+    }
+  });
+}
+
+// Закрываем панель при клике вне её
+document.addEventListener('click', (e) => {
+  if (emojiPicker && !emojiPicker.contains(e.target) && e.target !== emojiBtn) {
+    emojiPicker.style.display = 'none';
+  }
+});

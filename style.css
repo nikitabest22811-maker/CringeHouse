@@ -170,6 +170,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
+  position: relative; /* <--- ДОБАВЬ ЭТУ СТРОЧКУ */
 }
 
 /* Вкладки в сайдбаре */
@@ -341,4 +342,50 @@ body {
 
 .my-message .msg-author {
   color: var(--accent-2); /* Розовый цвет автора */
+}
+/* Панель эмодзи */
+#emojiPicker {
+  position: absolute;
+  bottom: 60px;
+  left: 0;
+  width: 100%;
+  background: var(--panel-2);
+  border-top: 1px solid var(--border);
+  padding: 10px;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 5px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 10;
+  box-shadow: 0 -5px 10px rgba(0,0,0,0.2);
+}
+
+#emojiPicker span {
+  cursor: pointer;
+  font-size: 20px;
+  text-align: center;
+  padding: 5px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+#emojiPicker span:hover {
+  background: var(--border);
+}
+
+/* Чтобы поле ввода было над панелью */
+.chat-form {
+  position: relative;
+  z-index: 11; 
+  background: var(--panel); /* Чтобы кнопки не просвечивали */
+}
+
+/* Кнопка эмодзи */
+#emojiBtn {
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+#emojiBtn:hover {
+  transform: scale(1.1);
 }

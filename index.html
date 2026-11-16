@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>☽ ℭ𝔯𝔦𝔫𝔤𝔢 ℌ𝔬𝔲𝔰𝔢 ☾</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="style.css">
+  <!-- Обновил версию стилей до v=12 -->
+  <link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
   <div class="app">
@@ -28,7 +29,6 @@
         </div>
 
         <div class="player-wrapper">
-          <!-- Сюда API YouTube вставит плеер -->
           <div id="player"></div>
         </div>
       </section>
@@ -40,16 +40,24 @@
           <button class="tab" data-tab="users">👥 Участники</button>
         </div>
 
+        <!-- Вкладка ЧАТ -->
         <div class="tab-content active" id="chatTab">
           <div class="chat-messages" id="chatMessages"></div>
           
-          <!-- ВОТ ЗДЕСЬ ДОБАВЛЕНА ЗАЩИТА: onsubmit="return false;" -->
+          <!-- Панель эмодзи (скрыта по умолчанию) -->
+          <div id="emojiPicker" style="display: none;">
+            <!-- Эмодзи будут добавлены через JS -->
+          </div>
+
+          <!-- Форма чата -->
           <form class="chat-form" id="chatForm" onsubmit="return false;">
+            <button type="button" id="emojiBtn" class="btn btn-small" style="padding: 0 10px; background: var(--panel-2); border: none; font-size: 18px;">😀</button>
             <input type="text" id="chatInput" placeholder="Написать сообщение...">
             <button type="submit" class="btn btn-primary">➤</button>
           </form>
-        </div>
+        </div> <!-- Закрывающий тег для chatTab! -->
 
+        <!-- Вкладка УЧАСТНИКИ -->
         <div class="tab-content" id="usersTab">
           <ul class="users-list" id="usersList">
             <!-- Список будет заполняться скриптом -->
@@ -88,11 +96,10 @@
     window.firebaseOnValue = onValue;
     window.onDisconnect = onDisconnect;
 
-    // Мостик для YouTube API
     window.dispatchEvent(new Event('firebase-ready'));
   </script>
 
-  <!-- 3. Основной скрипт (версия ?v=7) -->
-  <script src="script.js?v=10"></script>
+  <!-- 3. Основной скрипт -->
+  <script src="script.js?v=12"></script>
 </body>
 </html>
