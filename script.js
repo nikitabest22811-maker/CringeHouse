@@ -149,9 +149,13 @@ window.addEventListener('firebase-ready', () => {
   const sessionId = Math.random().toString(36).substring(2, 9);
 
     // --- 1. ПРОФИЛЬ И АВАТАР ---
-  function updateProfileUI() {
+    function updateProfileUI() {
     const profileBtn = document.getElementById("profileBtn");
-    if (profileBtn) profileBtn.textContent = `👤 ${userName}`;
+    if (profileBtn) {
+      // Берем аватар из localStorage (или стандартный 👤, если его нет)
+      const currentAvatar = localStorage.getItem("wp_avatar") || '👤';
+      profileBtn.textContent = `${currentAvatar} ${userName}`;
+    }
   }
   updateProfileUI();
 
