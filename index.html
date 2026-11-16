@@ -14,7 +14,6 @@
   <div class="app">
     <!-- Шапка -->
     <header class="header">
-      <!-- Логотип с телевизором -->
       <div class="logo">📺 ℭ𝔯𝔦𝔫𝔤𝔢 ℌ𝔬𝔲𝔰𝔢</div>
       
       <div class="room-info">
@@ -54,10 +53,9 @@
           
           <div id="emojiPicker" style="display: none;"></div>
 
-                    <form class="chat-form" id="chatForm" onsubmit="return false;">
+          <form class="chat-form" id="chatForm" onsubmit="return false;">
             <button type="button" id="emojiBtn" class="btn btn-small" style="padding: 0 10px; background: var(--panel-2); border: none; font-size: 18px;">😀</button>
             <input type="text" id="chatInput" placeholder="Написать сообщение...">
-            <button type="button" id="throwBtn" class="btn btn-small" style="padding: 0 10px; background: var(--panel-2); border: none; font-size: 18px;">🍅</button>
             <button type="submit" class="btn btn-primary">➤</button>
           </form>
         </div>
@@ -82,9 +80,7 @@
       
       <div class="form-group">
         <label>Выберите аватар:</label>
-        <div id="avatarGrid" class="avatar-grid">
-          <!-- Сюда JS добавит кнопки с эмодзи -->
-        </div>
+        <div id="avatarGrid" class="avatar-grid"></div>
       </div>
 
       <div class="modal-actions">

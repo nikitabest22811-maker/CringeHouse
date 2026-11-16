@@ -37,27 +37,10 @@ function addSystemMessage(text) {
   document.getElementById("chatMessages").scrollTop = document.getElementById("chatMessages").scrollHeight;
 }
 
-// ---------- Анимация броска ----------
-function spawnThrowAnimation(emoji) {
-  const el = document.createElement("div");
-  el.className = "throwing-item";
-  el.textContent = emoji;
-  
-  const top = Math.random() * 50 + 25; // от 25% до 75% высоты
-  el.style.top = `${top}vh`;
-  el.style.left = `-100px`;
-
-  document.body.appendChild(el);
-
-  setTimeout(() => {
-    el.remove();
-  }, 1500);
-}
-
 // ---------- Инициализация YouTube ----------
 let ytPlayer = null;
 let isRemoteAction = false;
-let isRemoteVolumeChange = false; // Флаг для громкости
+let isRemoteVolumeChange = false;
 
 window.onYouTubeIframeAPIReady = function() {
   console.log("YouTube API загружен, создаем плеер...");
@@ -73,7 +56,6 @@ window.onYouTubeIframeAPIReady = function() {
         // Слушаем изменение громкости нашим пользователем
         event.target.addEventListener('onVolumeChange', () => {
             const vol = event.target.getVolume();
-            // Если изменение не пришло от друга, отправляем в базу
             if (!isRemoteVolumeChange && typeof window.firebaseSet !== 'undefined') {
                 window.firebaseSet(window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/volume'), vol);
             }
@@ -387,8 +369,6 @@ window.addEventListener('firebase-ready', () => {
       el.innerHTML = `<div class="msg-system">${data.text}</div>`;
       chatMessages.appendChild(el);
       chatMessages.scrollTop = chatMessages.scrollHeight;
-      
-      if (data.isThrow) spawnThrowAnimation("🍅");
       return;
     }
 
@@ -466,20 +446,6 @@ window.addEventListener('firebase-ready', () => {
     const reactionRef = window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/messages/${msgId}/reactions/${sessionId}`);
     window.firebaseSet(reactionRef, emoji);
   };
-
-  // Кнопка броска помидора
-  const throwBtn = document.getElementById("throwBtn");
-  if (throwBtn) {
-    throwBtn.addEventListener("click", () => {
-      window.firebasePush(messagesRef, {
-        author: "Система",
-        text: `💥 ${userName} бросил 🍅 в экран!`,
-        timestamp: Date.now(),
-        isSystem: true,
-        isThrow: true
-      });
-    });
-  }
 
   // --- 5. ЭМОДЗИ ДЛЯ ВВОДА ТЕКСТА ---
   const emojiList = [
