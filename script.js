@@ -219,6 +219,7 @@ window.addEventListener('firebase-ready', () => {
     if (isMe) el.classList.add("my-message");
 
     const likesCount = data.reactions && data.reactions.like ? data.reactions.like : 0;
+    if (likesCount > 0) el.classList.add("has-likes");
 
     el.innerHTML = `
       <div class="msg-author">${data.author}</div>
@@ -267,3 +268,51 @@ window.addEventListener('firebase-ready', () => {
     window.firebaseSet(likeRef, newCount);
   };
 });
+
+// ---------- ЭМОДЗИ ДЛЯ ЧАТА ----------
+const emojiList = [
+  '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', 
+  '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', 
+  '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', 
+  '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', 
+  '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', 
+  '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', 
+  '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', 
+  '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', 
+  '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', 
+  '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', 
+  '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾',
+  '👋', '🤚', '🖐', '✋', '🖖', '👌', '🤏', '✌️', '🤞', '🤟', 
+  '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', 
+  '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏',
+  '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', 
+  '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '🔥',
+  '💯', '💢', '💥', '💫', '💦', '💨', '🕳', '💣', '💬', '👁️‍🗨️'
+];
+
+const emojiBtn = document.getElementById('emojiBtn');
+const emojiPicker = document.getElementById('emojiPicker');
+const chatInputElement = document.getElementById('chatInput');
+
+if (emojiPicker && emojiBtn) {
+  emojiList.forEach(emoji => {
+    const span = document.createElement('span');
+    span.textContent = emoji;
+    span.addEventListener('click', () => {
+      chatInputElement.value += emoji; 
+      chatInputElement.focus();        
+    });
+    emojiPicker.appendChild(span);
+  });
+
+  emojiBtn.addEventListener('click', (e) => {
+    e.preventDefault(); 
+    emojiPicker.style.display = (emojiPicker.style.display === 'none' || emojiPicker.style.display === '') ? 'grid' : 'none';
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
+      emojiPicker.style.display = 'none';
+    }
+  });
+}

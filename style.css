@@ -419,3 +419,47 @@ body {
 .reaction-btn:active {
   transform: scale(0.95);
 }
+/* Стили для кнопок реакций */
+.msg-reactions {
+  display: flex;
+  gap: 5px;
+  margin-top: 4px;
+  margin-left: 8px;
+  opacity: 0; /* Скрываем по умолчанию */
+  transition: opacity 0.2s ease-in-out;
+}
+
+/* Показываем кнопку при наведении на сообщение */
+.chat-message:hover .msg-reactions {
+  opacity: 1;
+}
+
+/* Если у сообщения уже есть лайки, показываем кнопку всегда */
+.chat-message.has-likes .msg-reactions {
+  opacity: 1;
+}
+
+/* Внешний вид самой кнопки */
+.reaction-btn {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.reaction-btn:hover {
+  background: var(--border);
+  transform: scale(1.1);
+  color: var(--text);
+}
+
+.reaction-btn:active {
+  transform: scale(0.95);
+}
