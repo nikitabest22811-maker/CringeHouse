@@ -72,7 +72,7 @@ function onPlayerStateChange(event) {
   });
 }
 
-// ---------- Загрузка видео ----------
+// ---------- Загрузка видео с лоадером ----------
 document.getElementById("loadVideo").addEventListener("click", () => {
   const url = document.getElementById("videoUrl").value;
   if (!ytPlayer) {
@@ -84,8 +84,19 @@ document.getElementById("loadVideo").addEventListener("click", () => {
     alert("Пока поддерживается только YouTube");
     return;
   }
+
+  // Показываем лоадер
+  const loader = document.getElementById("videoLoader");
+  if (loader) loader.style.display = "flex";
+
+  // Загружаем видео
   ytPlayer.loadVideoById(parsed.id);
   
+  // Скрываем лоадер через 3 секунды
+  setTimeout(() => {
+    if (loader) loader.style.display = "none";
+  }, 3000);
+
   if (typeof window.firebaseSet !== 'undefined') {
       window.firebaseSet(window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/videoState'), {
         videoId: parsed.id,
@@ -101,12 +112,26 @@ document.getElementById("videoUrl").addEventListener("keypress", (e) => {
   if (e.key === "Enter") document.getElementById("loadVideo").click();
 });
 
-// ---------- Копирование ссылки и Табы ----------
+// ---------- Копирование ссылки с приглашением ----------
 document.getElementById("copyLink").addEventListener("click", () => {
-  navigator.clipboard.writeText(window.location.href);
-  const btn = document.getElementById("copyLink");
-  btn.textContent = "Скопировано ✓";
-  setTimeout(() => (btn.textContent = "Скопировать ссылку"), 1500);
+  const roomUrl = window.location.href;
+  const inviteText = `🎬 Залетай в CringeHouse! Будем смотреть кино вместе: ${roomUrl}`;
+  
+  navigator.clipboard.writeText(inviteText).then(() => {
+    const btn = document.getElementById("copyLink");
+    const originalText = btn.textContent;
+    
+    btn.textContent = "Скопировано ✓";
+    btn.classList.add("copied");
+    
+    setTimeout(() => {
+      btn.textContent = originalText;
+      btn.classList.remove("copied");
+    }, 2000);
+  }).catch(err => {
+    console.error("Ошибка копирования:", err);
+    alert("Не удалось скопировать ссылку. Попробуй вручную.");
+  });
 });
 
 document.querySelectorAll(".tab").forEach((tab) => {
@@ -152,7 +177,6 @@ window.addEventListener('firebase-ready', () => {
   
   const systemMessagesRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/messages');
   
-  // Отправляем сообщение о входе
   window.firebasePush(systemMessagesRef, {
     author: "Система",
     text: `👋 ${userName} присоединился к комнате`,
@@ -162,7 +186,6 @@ window.addEventListener('firebase-ready', () => {
 
   window.onDisconnect(userPresenceRef).remove();
   
-  // Готовим сообщение о выходе (сработает, когда закроется вкладка)
   const disconnectMessageRef = window.firebasePush(systemMessagesRef); 
   window.onDisconnect(disconnectMessageRef).set({
     author: "Система",
@@ -257,12 +280,11 @@ window.addEventListener('firebase-ready', () => {
     el.className = "chat-message";
     el.id = `msg-${msgId}`;
     
-    // Если это системное сообщение — выводим по-особому
     if (data.isSystem) {
       el.innerHTML = `<div class="msg-system">${data.text}</div>`;
       chatMessages.appendChild(el);
       chatMessages.scrollTop = chatMessages.scrollHeight;
-      return; // Выходим, реакции тут не нужны
+      return;
     }
 
     const isMe = data.author === userName;
