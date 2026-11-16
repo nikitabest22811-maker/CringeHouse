@@ -205,34 +205,81 @@ window.addEventListener('firebase-ready', () => {
     }
   });
 
-  // --- 4. ЧАТ ---
+    // --- 4. ЧАТ С ИСТОРИЕЙ И РЕАКЦИЯМИ ---
   const chatMessages = document.getElementById("chatMessages");
   const chatForm = document.getElementById("chatForm");
   const chatInput = document.getElementById("chatInput");
   const messagesRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/messages');
 
-  function addMessageToHTML(author, text) {
+  // Функция для отрисовки одного сообщения
+  function renderMessage(msgId, data) {
+    // Проверяем, нет ли уже такого сообщения на экране (чтобы не дублировать)
+    if (document.getElementById(`msg-${msgId}`)) return;
+
     const el = document.createElement("div");
     el.className = "chat-message";
-    el.innerHTML = `<div class="msg-author">${author}</div><div class="msg-text">${text}</div>`;
+    el.id = `msg-${msgId}`;
+    
+    const isMe = data.author === userName;
+    if (isMe) el.classList.add("my-message");
+
+    // Считаем лайки (если их нет, то 0)
+    const likesCount = data.reactions && data.reactions.like ? data.reactions.like : 0;
+
+    el.innerHTML = `
+      <div class="msg-author">${data.author}</div>
+      <div class="msg-text">${data.text}</div>
+      <div class="msg-reactions">
+        <button class="reaction-btn" onclick="toggleLike('${msgId}', ${likesCount})">
+          ❤️ <span id="like-count-${msgId}">${likesCount > 0 ? likesCount : ''}</span>
+        </button>
+      </div>
+    `;
+    
     chatMessages.appendChild(el);
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
 
+  // Функция для загрузки всех старых сообщений при входе
+  window.firebaseOnValue(messagesRef, (snapshot) => {
+    const messagesData = snapshot.val();
+    if (!messagesData) return;
+
+    // Сортируем сообщения по времени (чтобы старые были сверху)
+    const sortedMessages = Object.entries(messagesData).sort((a, b) => a[1].timestamp - b[1].timestamp);
+
+    // Очищаем чат перед загрузкой (чтобы не было дублей при обновлении)
+    chatMessages.innerHTML = ""; 
+    sortedMessages.forEach(([id, data]) => {
+      renderMessage(id, data);
+    });
+  });
+
+  // Отправка нового сообщения
   chatForm.addEventListener("submit", (e) => {
     e.preventDefault();
     const text = chatInput.value.trim();
     if (!text) return;
     
-    window.firebasePush(messagesRef, { author: userName, text: text, timestamp: Date.now() });
+    window.firebasePush(messagesRef, { 
+      author: userName, 
+      text: text, 
+      timestamp: Date.now(),
+      reactions: { like: 0 } // Создаем поле для лайков
+    });
+    
     chatInput.value = "";
   });
 
-  window.firebaseOnChildAdded(messagesRef, (snapshot) => {
-    const msg = snapshot.val();
-    if (msg) addMessageToHTML(msg.author, msg.text);
-  });
-});
+  // Функция для постановки/снятия лайка
+  window.toggleLike = function(msgId, currentLikes) {
+    const likeRef = window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/messages/${msgId}/reactions/like`);
+    
+    // Если лайк уже есть (больше 0), уменьшаем, если нет - увеличиваем
+    const newCount = currentLikes > 0 ? currentLikes - 1 : 1;
+    
+    window.firebaseSet(likeRef, newCount);
+  };
 // ---------- ЭМОДЗИ ДЛЯ ЧАТА ----------
 const emojiList = [
   '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', 

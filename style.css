@@ -389,3 +389,33 @@ body {
 #emojiBtn:hover {
   transform: scale(1.1);
 }
+/* Стили для кнопок реакций */
+.msg-reactions {
+  display: flex;
+  gap: 5px;
+  margin-top: -5px;
+  margin-left: 5px;
+}
+
+.reaction-btn {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.reaction-btn:hover {
+  background: var(--border);
+  transform: scale(1.1);
+}
+
+.reaction-btn:active {
+  transform: scale(0.95);
+}
