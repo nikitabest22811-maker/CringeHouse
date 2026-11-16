@@ -37,9 +37,27 @@ function addSystemMessage(text) {
   document.getElementById("chatMessages").scrollTop = document.getElementById("chatMessages").scrollHeight;
 }
 
+// ---------- Анимация броска ----------
+function spawnThrowAnimation(emoji) {
+  const el = document.createElement("div");
+  el.className = "throwing-item";
+  el.textContent = emoji;
+  
+  const top = Math.random() * 50 + 25; // от 25% до 75% высоты
+  el.style.top = `${top}vh`;
+  el.style.left = `-100px`;
+
+  document.body.appendChild(el);
+
+  setTimeout(() => {
+    el.remove();
+  }, 1500);
+}
+
 // ---------- Инициализация YouTube ----------
 let ytPlayer = null;
 let isRemoteAction = false;
+let isRemoteVolumeChange = false; // Флаг для громкости
 
 window.onYouTubeIframeAPIReady = function() {
   console.log("YouTube API загружен, создаем плеер...");
@@ -49,7 +67,18 @@ window.onYouTubeIframeAPIReady = function() {
     videoId: '',
     playerVars: { 'playsinline': 1, 'rel': 0, 'origin': window.location.origin },
     events: {
-      'onReady': () => console.log("✅ Плеер готов!"),
+      'onReady': (event) => {
+        console.log("✅ Плеер готов!");
+        
+        // Слушаем изменение громкости нашим пользователем
+        event.target.addEventListener('onVolumeChange', () => {
+            const vol = event.target.getVolume();
+            // Если изменение не пришло от друга, отправляем в базу
+            if (!isRemoteVolumeChange && typeof window.firebaseSet !== 'undefined') {
+                window.firebaseSet(window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/volume'), vol);
+            }
+        });
+      },
       'onStateChange': onPlayerStateChange
     }
   });
@@ -148,11 +177,10 @@ window.addEventListener('firebase-ready', () => {
   
   const sessionId = Math.random().toString(36).substring(2, 9);
 
-    // --- 1. ПРОФИЛЬ И АВАТАР ---
-    function updateProfileUI() {
+  // --- 1. ПРОФИЛЬ И АВАТАР ---
+  function updateProfileUI() {
     const profileBtn = document.getElementById("profileBtn");
     if (profileBtn) {
-      // Берем аватар из localStorage (или стандартный 👤, если его нет)
       const currentAvatar = localStorage.getItem("wp_avatar") || '👤';
       profileBtn.textContent = `${currentAvatar} ${userName}`;
     }
@@ -164,33 +192,27 @@ window.addEventListener('firebase-ready', () => {
   const avatars = ['👤', '🦊', '🐼', '🐸', '🐯', '🐨', '🦁', '🐵', '🐧', '🦉', '🦄', '🐙', '🦖', '🐺', '🐻', '🐷'];
   let myAvatar = localStorage.getItem("wp_avatar") || '👤';
 
-  // Элементы модального окна
   const profileModal = document.getElementById("profileModal");
   const modalNameInput = document.getElementById("modalNameInput");
   const avatarGrid = document.getElementById("avatarGrid");
   const saveProfileBtn = document.getElementById("saveProfileBtn");
   const cancelProfileBtn = document.getElementById("cancelProfileBtn");
 
-  // Заполняем сетку аватаров
   let selectedAvatar = myAvatar;
   avatars.forEach(emoji => {
     const div = document.createElement("div");
     div.className = `avatar-option ${emoji === myAvatar ? 'selected' : ''}`;
     div.textContent = emoji;
     div.onclick = () => {
-      // Снимаем выделение со всех
       document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
-      // Выделяем выбранный
       div.classList.add('selected');
       selectedAvatar = emoji;
     };
     avatarGrid.appendChild(div);
   });
 
-  // Открытие окна
   document.getElementById("profileBtn").addEventListener("click", () => {
     modalNameInput.value = userName;
-    // Обновляем выделение аватара при открытии
     selectedAvatar = myAvatar;
     document.querySelectorAll('.avatar-option').forEach(el => {
       if (el.textContent === myAvatar) el.classList.add('selected');
@@ -199,15 +221,12 @@ window.addEventListener('firebase-ready', () => {
     profileModal.style.display = "flex";
   });
 
-  // Закрытие окна
   cancelProfileBtn.onclick = () => {
     profileModal.style.display = "none";
   };
 
-  // Сохранение
   saveProfileBtn.onclick = () => {
     const newName = modalNameInput.value.trim();
-    
     if (!newName) {
       alert("Имя не может быть пустым!");
       return;
@@ -225,9 +244,7 @@ window.addEventListener('firebase-ready', () => {
       addSystemMessage(`🖼️ Вы сменили аватар на ${myAvatar}`);
     }
 
-    // Отправляем обновленные данные в базу
     window.firebaseSet(userPresenceRef, { name: userName, avatar: myAvatar, joinedAt: Date.now() });
-    
     updateProfileUI();
     profileModal.style.display = "none";
   };
@@ -276,7 +293,7 @@ window.addEventListener('firebase-ready', () => {
     });
   });
 
-  // --- 3. СИНХРОНИЗАЦИЯ ВИДЕО ---
+  // --- 3. СИНХРОНИЗАЦИЯ ВИДЕО И ГРОМКОСТИ ---
   const videoStateRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/videoState');
   window.firebaseOnValue(videoStateRef, (snapshot) => {
     const data = snapshot.val();
@@ -305,6 +322,31 @@ window.addEventListener('firebase-ready', () => {
       ytPlayer.playVideo();
     }
   });
+
+  // Синхронизация громкости
+  const volumeRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/volume');
+  window.firebaseOnValue(volumeRef, (snapshot) => {
+    const vol = snapshot.val();
+    if (vol !== null && ytPlayer && typeof ytPlayer.setVolume === 'function') {
+      isRemoteVolumeChange = true; 
+      ytPlayer.setVolume(vol);
+      showVolumeIndicator(vol);
+      setTimeout(() => { isRemoteVolumeChange = false; }, 100);
+    }
+  });
+
+  function showVolumeIndicator(vol) {
+    let indicator = document.getElementById('volume-indicator');
+    if (!indicator) {
+      indicator = document.createElement('div');
+      indicator.id = 'volume-indicator';
+      indicator.className = 'volume-indicator';
+      document.body.appendChild(indicator);
+    }
+    indicator.textContent = `🔊 Громкость: ${vol}%`;
+    indicator.style.display = 'block';
+    setTimeout(() => { indicator.style.display = 'none'; }, 2000);
+  }
 
   // --- 4. ЧАТ С ИСТОРИЕЙ И РЕАКЦИЯМИ ---
   const chatMessages = document.getElementById("chatMessages");
@@ -345,6 +387,8 @@ window.addEventListener('firebase-ready', () => {
       el.innerHTML = `<div class="msg-system">${data.text}</div>`;
       chatMessages.appendChild(el);
       chatMessages.scrollTop = chatMessages.scrollHeight;
+      
+      if (data.isThrow) spawnThrowAnimation("🍅");
       return;
     }
 
@@ -422,6 +466,20 @@ window.addEventListener('firebase-ready', () => {
     const reactionRef = window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/messages/${msgId}/reactions/${sessionId}`);
     window.firebaseSet(reactionRef, emoji);
   };
+
+  // Кнопка броска помидора
+  const throwBtn = document.getElementById("throwBtn");
+  if (throwBtn) {
+    throwBtn.addEventListener("click", () => {
+      window.firebasePush(messagesRef, {
+        author: "Система",
+        text: `💥 ${userName} бросил 🍅 в экран!`,
+        timestamp: Date.now(),
+        isSystem: true,
+        isThrow: true
+      });
+    });
+  }
 
   // --- 5. ЭМОДЗИ ДЛЯ ВВОДА ТЕКСТА ---
   const emojiList = [
