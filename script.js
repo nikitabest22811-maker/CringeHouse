@@ -118,7 +118,6 @@ document.querySelectorAll(".tab").forEach((tab) => {
   });
 });
 
-
 // =====================================================================
 // ВСЁ, ЧТО СВЯЗАНО С FIREBASE, ЗАПУСКАЕМ ТОЛЬКО ПОСЛЕ ЕГО ЗАГРУЗКИ
 // =====================================================================
@@ -144,13 +143,11 @@ window.addEventListener('firebase-ready', () => {
       updateProfileUI();
       addSystemMessage(`✏️ Вы сменили имя на: ${userName}`);
       
-      // ИСПРАВЛЕНО: window.firebaseSet вместо window.set
       window.firebaseSet(userPresenceRef, { name: userName, joinedAt: Date.now() }); 
     }
   });
 
   // --- 2. УЧАСТНИКИ ---
-  // ИСПРАВЛЕНО: window.firebaseSet вместо window.set
   window.firebaseSet(userPresenceRef, { name: userName, joinedAt: Date.now() });
   window.onDisconnect(userPresenceRef).remove();
 
@@ -205,15 +202,13 @@ window.addEventListener('firebase-ready', () => {
     }
   });
 
-    // --- 4. ЧАТ С ИСТОРИЕЙ И РЕАКЦИЯМИ ---
+  // --- 4. ЧАТ С ИСТОРИЕЙ И РЕАКЦИЯМИ ---
   const chatMessages = document.getElementById("chatMessages");
   const chatForm = document.getElementById("chatForm");
   const chatInput = document.getElementById("chatInput");
   const messagesRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/messages');
 
-  // Функция для отрисовки одного сообщения
   function renderMessage(msgId, data) {
-    // Проверяем, нет ли уже такого сообщения на экране (чтобы не дублировать)
     if (document.getElementById(`msg-${msgId}`)) return;
 
     const el = document.createElement("div");
@@ -223,14 +218,13 @@ window.addEventListener('firebase-ready', () => {
     const isMe = data.author === userName;
     if (isMe) el.classList.add("my-message");
 
-    // Считаем лайки (если их нет, то 0)
     const likesCount = data.reactions && data.reactions.like ? data.reactions.like : 0;
 
     el.innerHTML = `
       <div class="msg-author">${data.author}</div>
       <div class="msg-text">${data.text}</div>
       <div class="msg-reactions">
-        <button class="reaction-btn" onclick="toggleLike('${msgId}', ${likesCount})">
+        <button class="reaction-btn" onclick="window.toggleLike('${msgId}', ${likesCount})">
           ❤️ <span id="like-count-${msgId}">${likesCount > 0 ? likesCount : ''}</span>
         </button>
       </div>
@@ -240,22 +234,18 @@ window.addEventListener('firebase-ready', () => {
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
 
-  // Функция для загрузки всех старых сообщений при входе
   window.firebaseOnValue(messagesRef, (snapshot) => {
     const messagesData = snapshot.val();
     if (!messagesData) return;
 
-    // Сортируем сообщения по времени (чтобы старые были сверху)
     const sortedMessages = Object.entries(messagesData).sort((a, b) => a[1].timestamp - b[1].timestamp);
 
-    // Очищаем чат перед загрузкой (чтобы не было дублей при обновлении)
     chatMessages.innerHTML = ""; 
     sortedMessages.forEach(([id, data]) => {
       renderMessage(id, data);
     });
   });
 
-  // Отправка нового сообщения
   chatForm.addEventListener("submit", (e) => {
     e.preventDefault();
     const text = chatInput.value.trim();
@@ -265,75 +255,15 @@ window.addEventListener('firebase-ready', () => {
       author: userName, 
       text: text, 
       timestamp: Date.now(),
-      reactions: { like: 0 } // Создаем поле для лайков
+      reactions: { like: 0 }
     });
     
     chatInput.value = "";
   });
 
-  // Функция для постановки/снятия лайка
   window.toggleLike = function(msgId, currentLikes) {
     const likeRef = window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/messages/${msgId}/reactions/like`);
-    
-    // Если лайк уже есть (больше 0), уменьшаем, если нет - увеличиваем
     const newCount = currentLikes > 0 ? currentLikes - 1 : 1;
-    
     window.firebaseSet(likeRef, newCount);
   };
-// ---------- ЭМОДЗИ ДЛЯ ЧАТА ----------
-const emojiList = [
-  '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', 
-  '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', 
-  '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', 
-  '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', 
-  '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', 
-  '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', 
-  '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', 
-  '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', 
-  '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', 
-  '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', 
-  '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾',
-  '👋', '🤚', '🖐', '✋', '🖖', '👌', '🤏', '✌️', '🤞', '🤟', 
-  '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', 
-  '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏',
-  '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', 
-  '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '🔥',
-  '💯', '💢', '💥', '💫', '💦', '💨', '🕳', '💣', '💬', '👁️‍🗨️'
-];
-
-// Находим элементы
-const emojiBtn = document.getElementById('emojiBtn');
-const emojiPicker = document.getElementById('emojiPicker');
-const chatInputElement = document.getElementById('chatInput');
-
-// Заполняем панель эмодзи
-if (emojiPicker) {
-  emojiList.forEach(emoji => {
-    const span = document.createElement('span');
-    span.textContent = emoji;
-    span.addEventListener('click', () => {
-      chatInputElement.value += emoji; // Добавляем эмодзи в поле ввода
-      chatInputElement.focus();        // Возвращаем фокус
-    });
-    emojiPicker.appendChild(span);
-  });
-}
-
-// Открываем/закрываем панель
-if (emojiBtn) {
-  emojiBtn.addEventListener('click', (e) => {
-    e.preventDefault(); // Чтобы кнопка не отправляла форму
-    if (emojiPicker.style.display === 'none' || emojiPicker.style.display === '') {
-      emojiPicker.style.display = 'grid';
-    } else {
-      emojiPicker.style.display = 'none';
-    }
-  });
-}
-
-// Закрываем панель при клике вне её
-document.addEventListener('click', (e) => {
-  if (emojiPicker && !emojiPicker.contains(e.target) && e.target !== emojiBtn) {
-    emojiPicker.style.display = 'none';
-  }
 });
