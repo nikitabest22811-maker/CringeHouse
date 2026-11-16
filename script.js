@@ -148,7 +148,7 @@ window.addEventListener('firebase-ready', () => {
   
   const sessionId = Math.random().toString(36).substring(2, 9);
 
-  // --- 1. ПРОФИЛЬ И АВАТАР ---
+    // --- 1. ПРОФИЛЬ И АВАТАР ---
   function updateProfileUI() {
     const profileBtn = document.getElementById("profileBtn");
     if (profileBtn) profileBtn.textContent = `👤 ${userName}`;
@@ -156,38 +156,77 @@ window.addEventListener('firebase-ready', () => {
   updateProfileUI();
 
   const userPresenceRef = window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/users/${sessionId}`);
-
-  const avatars = ['🦊', '🐼', '🐸', '🐯', '🐨', '🦁', '🐵', '🐧', '🦉', '🦄', '🐙', '🦖'];
+  
+  const avatars = ['👤', '🦊', '🐼', '🐸', '🐯', '🐨', '🦁', '🐵', '🐧', '🦉', '🦄', '🐙', '🦖', '🐺', '🐻', '🐷'];
   let myAvatar = localStorage.getItem("wp_avatar") || '👤';
 
-  function pickAvatar() {
-    const selected = prompt(`Выбери аватар (введи эмодзи):\n${avatars.join(' ')}\nТекущий: ${myAvatar}`, myAvatar);
-    if (selected && avatars.includes(selected.trim())) {
-      myAvatar = selected.trim();
+  // Элементы модального окна
+  const profileModal = document.getElementById("profileModal");
+  const modalNameInput = document.getElementById("modalNameInput");
+  const avatarGrid = document.getElementById("avatarGrid");
+  const saveProfileBtn = document.getElementById("saveProfileBtn");
+  const cancelProfileBtn = document.getElementById("cancelProfileBtn");
+
+  // Заполняем сетку аватаров
+  let selectedAvatar = myAvatar;
+  avatars.forEach(emoji => {
+    const div = document.createElement("div");
+    div.className = `avatar-option ${emoji === myAvatar ? 'selected' : ''}`;
+    div.textContent = emoji;
+    div.onclick = () => {
+      // Снимаем выделение со всех
+      document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
+      // Выделяем выбранный
+      div.classList.add('selected');
+      selectedAvatar = emoji;
+    };
+    avatarGrid.appendChild(div);
+  });
+
+  // Открытие окна
+  document.getElementById("profileBtn").addEventListener("click", () => {
+    modalNameInput.value = userName;
+    // Обновляем выделение аватара при открытии
+    selectedAvatar = myAvatar;
+    document.querySelectorAll('.avatar-option').forEach(el => {
+      if (el.textContent === myAvatar) el.classList.add('selected');
+      else el.classList.remove('selected');
+    });
+    profileModal.style.display = "flex";
+  });
+
+  // Закрытие окна
+  cancelProfileBtn.onclick = () => {
+    profileModal.style.display = "none";
+  };
+
+  // Сохранение
+  saveProfileBtn.onclick = () => {
+    const newName = modalNameInput.value.trim();
+    
+    if (!newName) {
+      alert("Имя не может быть пустым!");
+      return;
+    }
+
+    if (newName !== userName) {
+      userName = newName;
+      localStorage.setItem("wp_userName", userName);
+      addSystemMessage(`✏️ Вы сменили имя на: ${userName}`);
+    }
+
+    if (selectedAvatar !== myAvatar) {
+      myAvatar = selectedAvatar;
       localStorage.setItem("wp_avatar", myAvatar);
       addSystemMessage(`🖼️ Вы сменили аватар на ${myAvatar}`);
-      window.firebaseSet(userPresenceRef, { name: userName, avatar: myAvatar, joinedAt: Date.now() });
-    } else if (selected) {
-      alert("Такого аватара нет в списке. Выбери из предложенных.");
     }
-  }
 
-  document.getElementById("profileBtn").addEventListener("click", () => {
-    const action = prompt("Что хочешь изменить? Напиши 'имя' или 'аватар':", "имя");
+    // Отправляем обновленные данные в базу
+    window.firebaseSet(userPresenceRef, { name: userName, avatar: myAvatar, joinedAt: Date.now() });
     
-    if (action === 'имя' || action === 'name') {
-      const newName = prompt("Введите ваше имя:", userName);
-      if (newName && newName.trim() !== "") {
-        userName = newName.trim();
-        localStorage.setItem("wp_userName", userName);
-        updateProfileUI();
-        addSystemMessage(`✏️ Вы сменили имя на: ${userName}`);
-        window.firebaseSet(userPresenceRef, { name: userName, avatar: myAvatar, joinedAt: Date.now() }); 
-      }
-    } else if (action === 'аватар' || action === 'avatar') {
-      pickAvatar();
-    }
-  });
+    updateProfileUI();
+    profileModal.style.display = "none";
+  };
 
   // --- 2. УЧАСТНИКИ И УВЕДОМЛЕНИЯ ---
   window.firebaseSet(userPresenceRef, { name: userName, avatar: myAvatar, joinedAt: Date.now() });
