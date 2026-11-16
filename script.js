@@ -147,9 +147,29 @@ window.addEventListener('firebase-ready', () => {
     }
   });
 
-  // --- 2. УЧАСТНИКИ ---
+  // --- 2. УЧАСТНИКИ И УВЕДОМЛЕНИЯ ---
   window.firebaseSet(userPresenceRef, { name: userName, joinedAt: Date.now() });
+  
+  const systemMessagesRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/messages');
+  
+  // Отправляем сообщение о входе
+  window.firebasePush(systemMessagesRef, {
+    author: "Система",
+    text: `👋 ${userName} присоединился к комнате`,
+    timestamp: Date.now(),
+    isSystem: true
+  });
+
   window.onDisconnect(userPresenceRef).remove();
+  
+  // Готовим сообщение о выходе (сработает, когда закроется вкладка)
+  const disconnectMessageRef = window.firebasePush(systemMessagesRef); 
+  window.onDisconnect(disconnectMessageRef).set({
+    author: "Система",
+    text: `🚪 ${userName} покинул комнату`,
+    timestamp: Date.now(),
+    isSystem: true
+  });
 
   const usersListRef = window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/users`);
   const usersListElement = document.getElementById("usersList");
@@ -237,6 +257,14 @@ window.addEventListener('firebase-ready', () => {
     el.className = "chat-message";
     el.id = `msg-${msgId}`;
     
+    // Если это системное сообщение — выводим по-особому
+    if (data.isSystem) {
+      el.innerHTML = `<div class="msg-system">${data.text}</div>`;
+      chatMessages.appendChild(el);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      return; // Выходим, реакции тут не нужны
+    }
+
     const isMe = data.author === userName;
     if (isMe) el.classList.add("my-message");
 
