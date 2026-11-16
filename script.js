@@ -85,14 +85,11 @@ document.getElementById("loadVideo").addEventListener("click", () => {
     return;
   }
 
-  // Показываем лоадер
   const loader = document.getElementById("videoLoader");
   if (loader) loader.style.display = "flex";
 
-  // Загружаем видео
   ytPlayer.loadVideoById(parsed.id);
   
-  // Скрываем лоадер через 3 секунды
   setTimeout(() => {
     if (loader) loader.style.display = "none";
   }, 3000);
@@ -151,7 +148,7 @@ window.addEventListener('firebase-ready', () => {
   
   const sessionId = Math.random().toString(36).substring(2, 9);
 
-  // --- 1. ПРОФИЛЬ ---
+  // --- 1. ПРОФИЛЬ И АВАТАР ---
   function updateProfileUI() {
     const profileBtn = document.getElementById("profileBtn");
     if (profileBtn) profileBtn.textContent = `👤 ${userName}`;
@@ -160,20 +157,40 @@ window.addEventListener('firebase-ready', () => {
 
   const userPresenceRef = window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/users/${sessionId}`);
 
+  const avatars = ['🦊', '🐼', '🐸', '🐯', '🐨', '🦁', '🐵', '🐧', '🦉', '🦄', '🐙', '🦖'];
+  let myAvatar = localStorage.getItem("wp_avatar") || '👤';
+
+  function pickAvatar() {
+    const selected = prompt(`Выбери аватар (введи эмодзи):\n${avatars.join(' ')}\nТекущий: ${myAvatar}`, myAvatar);
+    if (selected && avatars.includes(selected.trim())) {
+      myAvatar = selected.trim();
+      localStorage.setItem("wp_avatar", myAvatar);
+      addSystemMessage(`🖼️ Вы сменили аватар на ${myAvatar}`);
+      window.firebaseSet(userPresenceRef, { name: userName, avatar: myAvatar, joinedAt: Date.now() });
+    } else if (selected) {
+      alert("Такого аватара нет в списке. Выбери из предложенных.");
+    }
+  }
+
   document.getElementById("profileBtn").addEventListener("click", () => {
-    const newName = prompt("Введите ваше имя:", userName);
-    if (newName && newName.trim() !== "") {
-      userName = newName.trim();
-      localStorage.setItem("wp_userName", userName);
-      updateProfileUI();
-      addSystemMessage(`✏️ Вы сменили имя на: ${userName}`);
-      
-      window.firebaseSet(userPresenceRef, { name: userName, joinedAt: Date.now() }); 
+    const action = prompt("Что хочешь изменить? Напиши 'имя' или 'аватар':", "имя");
+    
+    if (action === 'имя' || action === 'name') {
+      const newName = prompt("Введите ваше имя:", userName);
+      if (newName && newName.trim() !== "") {
+        userName = newName.trim();
+        localStorage.setItem("wp_userName", userName);
+        updateProfileUI();
+        addSystemMessage(`✏️ Вы сменили имя на: ${userName}`);
+        window.firebaseSet(userPresenceRef, { name: userName, avatar: myAvatar, joinedAt: Date.now() }); 
+      }
+    } else if (action === 'аватар' || action === 'avatar') {
+      pickAvatar();
     }
   });
 
   // --- 2. УЧАСТНИКИ И УВЕДОМЛЕНИЯ ---
-  window.firebaseSet(userPresenceRef, { name: userName, joinedAt: Date.now() });
+  window.firebaseSet(userPresenceRef, { name: userName, avatar: myAvatar, joinedAt: Date.now() });
   
   const systemMessagesRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/messages');
   
@@ -210,7 +227,8 @@ window.addEventListener('firebase-ready', () => {
     users.forEach((user) => {
       const li = document.createElement("li");
       const isMe = user.name === userName;
-      li.innerHTML = `👤 ${user.name} ${isMe ? '<span style="color: var(--accent); font-size: 12px;">(Вы)</span>' : ''}`;
+      const userAvatar = user.avatar || '👤';
+      li.innerHTML = `${userAvatar} ${user.name} ${isMe ? '<span style="color: var(--accent); font-size: 12px;">(Вы)</span>' : ''}`;
       usersListElement.appendChild(li);
     });
   });
@@ -290,6 +308,8 @@ window.addEventListener('firebase-ready', () => {
     const isMe = data.author === userName;
     if (isMe) el.classList.add("my-message");
 
+    const authorAvatar = data.avatar || '👤';
+
     let reactionsHtml = '';
     if (data.reactions) {
       const reactionCounts = {};
@@ -304,7 +324,7 @@ window.addEventListener('firebase-ready', () => {
     }
 
     el.innerHTML = `
-      <div class="msg-author">${data.author}</div>
+      <div class="msg-author">${authorAvatar} ${data.author}</div>
       <div class="msg-text">${data.text}</div>
       <div class="msg-reactions-display">${reactionsHtml}</div>
     `;
@@ -312,16 +332,12 @@ window.addEventListener('firebase-ready', () => {
     el.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       contextMenu.dataset.msgId = msgId;
-      
       const rect = el.getBoundingClientRect();
       const menuWidth = contextMenu.offsetWidth || 250;
-
       let leftPos = rect.left + (rect.width / 2) - (menuWidth / 2);
       let topPos = rect.top - 45;
-
       if (leftPos < 10) leftPos = 10;
       if (topPos < 10) topPos = rect.bottom + 10;
-
       contextMenu.style.left = `${leftPos + window.scrollX}px`;
       contextMenu.style.top = `${topPos + window.scrollY}px`;
       contextMenu.style.display = 'flex';
@@ -350,6 +366,7 @@ window.addEventListener('firebase-ready', () => {
     
     window.firebasePush(messagesRef, { 
       author: userName, 
+      avatar: myAvatar,
       text: text, 
       timestamp: Date.now(),
       reactions: {}

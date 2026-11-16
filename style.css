@@ -748,3 +748,33 @@ body {
   padding: 5px 0;
   opacity: 0.8;
 }
+/* Анимация появления сообщений */
+@keyframes messageSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.chat-message {
+  animation: messageSlideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Делаем аватар красивее в чате */
+.msg-author {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px; /* Чуть увеличили для аватара */
+}
+
+/* Аватар в списке участников */
+.users-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
