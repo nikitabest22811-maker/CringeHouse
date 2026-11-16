@@ -262,8 +262,18 @@ window.addEventListener('firebase-ready', () => {
     el.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       contextMenu.dataset.msgId = msgId;
-      contextMenu.style.left = `${e.pageX}px`;
-      contextMenu.style.top = `${e.pageY - 40}px`;
+      
+      const rect = el.getBoundingClientRect();
+      const menuWidth = contextMenu.offsetWidth || 250;
+
+      let leftPos = rect.left + (rect.width / 2) - (menuWidth / 2);
+      let topPos = rect.top - 45;
+
+      if (leftPos < 10) leftPos = 10;
+      if (topPos < 10) topPos = rect.bottom + 10;
+
+      contextMenu.style.left = `${leftPos + window.scrollX}px`;
+      contextMenu.style.top = `${topPos + window.scrollY}px`;
       contextMenu.style.display = 'flex';
     });
 
@@ -298,7 +308,6 @@ window.addEventListener('firebase-ready', () => {
     chatInput.value = "";
   });
 
-  // Исправленная функция реакций (без .off)
   window.toggleReaction = function(msgId, emoji) {
     const reactionRef = window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/messages/${msgId}/reactions/${sessionId}`);
     window.firebaseSet(reactionRef, emoji);
