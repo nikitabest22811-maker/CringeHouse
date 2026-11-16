@@ -1,18 +1,23 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>☽ ℭ𝔯𝔦𝔫𝔤𝔢 ℌ𝔬𝔲𝔰𝔢 ☾</title>
-  <link rel="icon" href="data:,">
-  <!-- Обновил версию стилей до v=12 -->
-  <link rel="stylesheet" href="style.css?v=20">
+  <title>🏝️ CringeHouse</title>
+  
+  <!-- Иконка вкладки браузера с островом -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏝️</text></svg>">
+  
+  <link rel="stylesheet" href="style.css?v=23">
 </head>
 <body>
   <div class="app">
     <!-- Шапка -->
     <header class="header">
-      <div class="logo">☽ ℭ𝔯𝔦𝔫𝔤𝔢 ℌ𝔬𝔲𝔰𝔢 ☾</div>
+      <!-- Новый логотип с островом -->
+      <div class="logo">🏝️ ℭ𝔯𝔦𝔫𝔤𝔢 ℌ𝔬𝔲𝔰𝔢</div>
+      
       <div class="room-info">
         <span>Комната: <b id="roomId">—</b></span>
         <button id="profileBtn" class="btn btn-small" style="background: var(--accent-2); color: white; border: none;">👤 Профиль</button>
@@ -29,6 +34,10 @@
         </div>
 
         <div class="player-wrapper">
+          <!-- Лоадер -->
+          <div id="videoLoader" class="video-loader" style="display: none;">
+            <div class="spinner"></div>
+          </div>
           <div id="player"></div>
         </div>
       </section>
@@ -44,24 +53,18 @@
         <div class="tab-content active" id="chatTab">
           <div class="chat-messages" id="chatMessages"></div>
           
-          <!-- Панель эмодзи (скрыта по умолчанию) -->
-          <div id="emojiPicker" style="display: none;">
-            <!-- Эмодзи будут добавлены через JS -->
-          </div>
+          <div id="emojiPicker" style="display: none;"></div>
 
-          <!-- Форма чата -->
           <form class="chat-form" id="chatForm" onsubmit="return false;">
             <button type="button" id="emojiBtn" class="btn btn-small" style="padding: 0 10px; background: var(--panel-2); border: none; font-size: 18px;">😀</button>
             <input type="text" id="chatInput" placeholder="Написать сообщение...">
             <button type="submit" class="btn btn-primary">➤</button>
           </form>
-        </div> <!-- Закрывающий тег для chatTab! -->
+        </div>
 
         <!-- Вкладка УЧАСТНИКИ -->
         <div class="tab-content" id="usersTab">
-          <ul class="users-list" id="usersList">
-            <!-- Список будет заполняться скриптом -->
-          </ul>
+          <ul class="users-list" id="usersList"></ul>
         </div>
       </aside>
     </main>
@@ -100,6 +103,6 @@
   </script>
 
   <!-- 3. Основной скрипт -->
-  <script src="script.js?v=20"></script>
+  <script src="script.js?v=23"></script>
 </body>
 </html>
