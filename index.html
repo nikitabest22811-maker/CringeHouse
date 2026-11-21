@@ -7,7 +7,7 @@
   
   <link rel="icon" href="data:,">
   
-  <link rel="stylesheet" href="style.css?v=38">
+  <link rel="stylesheet" href="style.css?v=39">
 </head>
 <body>
   <div class="app">
@@ -66,13 +66,17 @@
     </main>
   </div>
 
-  <!-- Модальное окно настройки своего профиля -->
+    <!-- Модальное окно настройки своего профиля -->
   <div id="profileModal" class="modal-overlay" style="display: none;">
     <div class="modal-content">
       <h3>Настройка профиля</h3>
       
       <div class="avatar-upload-container">
-        <img id="modalAvatarPreview" src="" alt="Аватар" class="avatar-preview">
+        <!-- Обертка для аватара, чтобы на него можно было надеть шляпу -->
+        <div class="avatar-customizer" id="avatarPreviewContainer">
+          <img id="modalAvatarPreview" src="" alt="Аватар" class="avatar-preview">
+          <div id="hatPreview" class="hat-preview" style="display: none;"></div>
+        </div>
         <label for="avatarFileInput" class="btn btn-small" style="cursor: pointer;">Загрузить фото</label>
         <input type="file" id="avatarFileInput" accept="image/*" style="display: none;">
       </div>
@@ -80,6 +84,33 @@
       <div class="form-group">
         <label>Ваш никнейм:</label>
         <input type="text" id="modalNameInput" class="modal-input" placeholder="Введите имя...">
+      </div>
+
+      <!-- Выбор цвета рамки -->
+      <div class="form-group">
+        <label>Цвет рамки:</label>
+        <div class="color-picker" id="colorPicker">
+          <div class="color-option" data-color="#7c5cff" style="background: #7c5cff;"></div>
+          <div class="color-option" data-color="#ff5c8a" style="background: #ff5c8a;"></div>
+          <div class="color-option" data-color="#00d2ff" style="background: #00d2ff;"></div>
+          <div class="color-option" data-color="#ffd700" style="background: #ffd700;"></div>
+          <div class="color-option" data-color="#00ff00" style="background: #00ff00;"></div>
+          <div class="color-option" data-color="#ffffff" style="background: #ffffff;"></div>
+        </div>
+      </div>
+
+      <!-- Выбор шляпы -->
+      <div class="form-group">
+        <label>Аксессуар:</label>
+        <div class="hat-picker" id="hatPicker">
+          <div class="hat-option selected" data-hat="">Без шляпы</div>
+          <div class="hat-option" data-hat="🎩">🎩</div>
+          <div class="hat-option" data-hat="👑">👑</div>
+          <div class="hat-option" data-hat="🧢">🧢</div>
+          <div class="hat-option" data-hat="🎓">🎓</div>
+          <div class="hat-option" data-hat="👒">👒</div>
+          <div class="hat-option" data-hat="🎃">🎃</div>
+        </div>
       </div>
 
       <div class="modal-actions">
@@ -130,6 +161,6 @@
   </script>
 
   <!-- 3. Основной скрипт -->
-  <script src="script.js?v=38"></script>
+  <script src="script.js?v=39"></script>
 </body>
 </html>

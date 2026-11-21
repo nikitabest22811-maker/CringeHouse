@@ -15,6 +15,8 @@ document.getElementById("roomId").textContent = ROOM_ID;
 
 let userName = localStorage.getItem("wp_userName");
 let myAvatar = localStorage.getItem("wp_avatar") || "";
+let myColor = localStorage.getItem("wp_color") || "#7c5cff"; // Цвет рамки
+let myHat = localStorage.getItem("wp_hat") || ""; // Шляпа
 
 // ---------- Парсинг ссылок ----------
 function parseVideoUrl(url) {
@@ -117,22 +119,59 @@ window.addEventListener('firebase-ready', () => {
   const avatarFileInput = document.getElementById("avatarFileInput");
   const saveProfileBtn = document.getElementById("saveProfileBtn");
   const profileBtn = document.getElementById("profileBtn");
+  
+  const avatarPreviewContainer = document.getElementById("avatarPreviewContainer");
+  const hatPreview = document.getElementById("hatPreview");
+  const colorPicker = document.getElementById("colorPicker");
+  const hatPicker = document.getElementById("hatPicker");
+
+  // Переменные для выбора в модалке
+  let tempColor = myColor;
+  let tempHat = myHat;
+
+  function applyPreviewStyles() {
+    avatarPreviewContainer.style.borderColor = tempColor;
+    if (tempHat) {
+      hatPreview.textContent = tempHat;
+      hatPreview.style.display = "block";
+    } else {
+      hatPreview.style.display = "none";
+    }
+  }
 
   function updateProfileUI() {
     if (profileBtn) {
       if (myAvatar) {
-        profileBtn.innerHTML = `<img src="${myAvatar}" class="msg-avatar-img" style="width:20px;height:20px;"> ${userName || 'Гость'}`;
+        // В шапке показываем только аватар (без шляп, чтобы не ломать верстку)
+        profileBtn.innerHTML = `<img src="${myAvatar}" class="msg-avatar-img" style="width:20px;height:20px; border-color: ${myColor};"> ${userName || 'Гость'}`;
       } else {
         profileBtn.textContent = `👤 ${userName || 'Гость'}`;
       }
     }
   }
 
-  if (!userName) {
-    profileModal.style.display = "flex";
-  } else {
-    updateProfileUI();
-  }
+  if (!userName) profileModal.style.display = "flex";
+  else updateProfileUI();
+
+  // Обработка выбора цвета
+  colorPicker.querySelectorAll(".color-option").forEach(opt => {
+    opt.addEventListener("click", () => {
+      colorPicker.querySelectorAll(".color-option").forEach(o => o.classList.remove("selected"));
+      opt.classList.add("selected");
+      tempColor = opt.dataset.color;
+      applyPreviewStyles();
+    });
+  });
+
+  // Обработка выбора шляпы
+  hatPicker.querySelectorAll(".hat-option").forEach(opt => {
+    opt.addEventListener("click", () => {
+      hatPicker.querySelectorAll(".hat-option").forEach(o => o.classList.remove("selected"));
+      opt.classList.add("selected");
+      tempHat = opt.dataset.hat;
+      applyPreviewStyles();
+    });
+  });
 
   avatarFileInput.addEventListener("change", (e) => {
     const file = e.target.files[0];
@@ -146,6 +185,19 @@ window.addEventListener('firebase-ready', () => {
   profileBtn.addEventListener("click", () => {
     modalNameInput.value = userName || "";
     modalAvatarPreview.src = myAvatar || "";
+    
+    // Восстанавливаем выбранные настройки при открытии
+    tempColor = myColor;
+    tempHat = myHat;
+    
+    colorPicker.querySelectorAll(".color-option").forEach(o => {
+      o.classList.toggle("selected", o.dataset.color === myColor);
+    });
+    hatPicker.querySelectorAll(".hat-option").forEach(o => {
+      o.classList.toggle("selected", o.dataset.hat === myHat);
+    });
+    
+    applyPreviewStyles();
     profileModal.style.display = "flex";
   });
 
@@ -154,14 +206,27 @@ window.addEventListener('firebase-ready', () => {
     if (!newName) { alert("Введите никнейм!"); return; }
     
     userName = newName;
+    myColor = tempColor;
+    myHat = tempHat;
+    
     localStorage.setItem("wp_userName", userName);
+    localStorage.setItem("wp_color", myColor);
+    localStorage.setItem("wp_hat", myHat);
 
     if (modalAvatarPreview.src && modalAvatarPreview.src !== myAvatar) {
       myAvatar = modalAvatarPreview.src;
       localStorage.setItem("wp_avatar", myAvatar);
     }
 
-    window.firebaseSet(userPresenceRef, { name: userName, avatar: myAvatar, joinedAt: Date.now() });
+    // Отправляем ВСЕ данные в базу
+    window.firebaseSet(userPresenceRef, { 
+      name: userName, 
+      avatar: myAvatar, 
+      color: myColor, 
+      hat: myHat,
+      joinedAt: Date.now() 
+    });
+    
     updateProfileUI();
     profileModal.style.display = "none";
     addSystemMessage(`✏️ Профиль обновлен: ${userName}`);
@@ -172,20 +237,22 @@ window.addEventListener('firebase-ready', () => {
   const closeUserProfileBtn = document.getElementById("closeUserProfileBtn");
   const viewAvatar = document.getElementById("viewAvatar");
   const viewName = document.getElementById("viewName");
+  const viewAvatarContainer = document.getElementById("viewAvatarContainer");
+  const viewHat = document.getElementById("viewHat");
 
-  closeUserProfileBtn.onclick = () => {
-    userProfileModal.style.display = "none";
-  };
-
-  // Закрытие по клику на свободное поле (фон)
+  closeUserProfileBtn.onclick = () => { userProfileModal.style.display = "none"; };
   userProfileModal.addEventListener("click", (e) => {
-    if (e.target === userProfileModal) {
-      userProfileModal.style.display = "none";
-    }
+    if (e.target === userProfileModal) userProfileModal.style.display = "none";
   });
 
   // --- 3. УЧАСТНИКИ ---
-  window.firebaseSet(userPresenceRef, { name: userName || "Гость", avatar: myAvatar, joinedAt: Date.now() });
+  window.firebaseSet(userPresenceRef, { 
+    name: userName || "Гость", 
+    avatar: myAvatar, 
+    color: myColor, 
+    hat: myHat,
+    joinedAt: Date.now() 
+  });
   
   const systemMessagesRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/messages');
   if (userName) {
@@ -217,12 +284,22 @@ window.addEventListener('firebase-ready', () => {
       const li = document.createElement("li");
       const isMe = user.name === userName;
       
-      let avatarHtml = user.avatar ? `<img src="${user.avatar}" class="user-list-avatar">` : '👤';
-      li.innerHTML = `${avatarHtml} ${user.name} ${isMe ? '<span style="color: var(--accent); font-size: 12px;">(Вы)</span>' : ''}`;
+      let avatarHtml = user.avatar ? `<img src="${user.avatar}" class="user-list-avatar" style="border-color: ${user.color || 'var(--border)'};">` : '👤';
+      // В списке показываем ник, эмодзи шляпы и аватар
+      const hatHtml = user.hat ? `${user.hat} ` : "";
+      li.innerHTML = `${avatarHtml} ${hatHtml}${user.name} ${isMe ? '<span style="color: var(--accent); font-size: 12px;">(Вы)</span>' : ''}`;
       
-      // Разрешаем клик по любому участнику (включая себя)
       li.addEventListener("click", () => {
         viewAvatar.src = user.avatar || "https://via.placeholder.com/150x150?text=No+Photo";
+        viewAvatarContainer.style.borderColor = user.color || "var(--accent)";
+        
+        if (user.hat) {
+          viewHat.textContent = user.hat;
+          viewHat.style.display = "block";
+        } else {
+          viewHat.style.display = "none";
+        }
+        
         viewName.textContent = user.name + (isMe ? " (Вы)" : "");
         userProfileModal.style.display = "flex";
       });
@@ -297,7 +374,8 @@ window.addEventListener('firebase-ready', () => {
     const isMe = data.author === userName;
     if (isMe) el.classList.add("my-message");
 
-    const avatarHtml = data.avatar ? `<img src="${data.avatar}" class="msg-avatar-img">` : '👤';
+    const avatarHtml = data.avatar ? `<img src="${data.avatar}" class="msg-avatar-img" style="border-color: ${data.color || 'var(--border)'};">` : '👤';
+    const hatHtml = data.hat ? `${data.hat} ` : "";
 
     let reactionsHtml = '';
     if (data.reactions) {
@@ -313,7 +391,7 @@ window.addEventListener('firebase-ready', () => {
     }
 
     el.innerHTML = `
-      <div class="msg-author">${avatarHtml} ${data.author}</div>
+      <div class="msg-author">${avatarHtml} ${hatHtml}${data.author}</div>
       <div class="msg-text">${data.text}</div>
       <div class="msg-reactions-display">${reactionsHtml}</div>
     `;
@@ -352,6 +430,8 @@ window.addEventListener('firebase-ready', () => {
     window.firebasePush(messagesRef, { 
       author: userName || "Гость", 
       avatar: myAvatar,
+      color: myColor,
+      hat: myHat,
       text: text, 
       timestamp: Date.now(),
       reactions: {}
