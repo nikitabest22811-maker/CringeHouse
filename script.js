@@ -13,11 +13,9 @@ function getRoomId() {
 const ROOM_ID = getRoomId();
 document.getElementById("roomId").textContent = ROOM_ID;
 
+// Профиль (имя и аватар в Base64)
 let userName = localStorage.getItem("wp_userName");
-if (!userName) {
-  userName = "Гость" + Math.floor(Math.random() * 1000);
-  localStorage.setItem("wp_userName", userName);
-}
+let myAvatar = localStorage.getItem("wp_avatar") || "";
 
 // ---------- Парсинг ссылок ----------
 function parseVideoUrl(url) {
@@ -42,16 +40,10 @@ let ytPlayer = null;
 let isRemoteAction = false;
 
 window.onYouTubeIframeAPIReady = function() {
-  console.log("YouTube API загружен, создаем плеер...");
   ytPlayer = new YT.Player('player', {
-    height: '100%',
-    width: '100%',
-    videoId: '',
+    height: '100%', width: '100%', videoId: '',
     playerVars: { 'playsinline': 1, 'rel': 0, 'origin': window.location.origin },
-    events: {
-      'onReady': () => console.log("✅ Плеер готов!"),
-      'onStateChange': onPlayerStateChange
-    }
+    events: { 'onReady': () => console.log("✅ Плеер готов!"), 'onStateChange': onPlayerStateChange }
   });
 };
 
@@ -62,44 +54,28 @@ function onPlayerStateChange(event) {
   }
   const videoId = ytPlayer.getVideoData().video_id;
   if (!videoId) return;
-  const currentTime = ytPlayer.getCurrentTime();
   
   window.firebaseSet(window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/videoState'), {
-    videoId: videoId,
-    state: event.data, 
-    time: currentTime,
-    timestamp: Date.now()
+    videoId: videoId, state: event.data, time: ytPlayer.getCurrentTime(), timestamp: Date.now()
   });
 }
 
-// ---------- Загрузка видео с лоадером ----------
+// ---------- Загрузка видео ----------
 document.getElementById("loadVideo").addEventListener("click", () => {
   const url = document.getElementById("videoUrl").value;
-  if (!ytPlayer) {
-    alert("Плеер ещё загружается. Подожди 2 секунды.");
-    return;
-  }
+  if (!ytPlayer) { alert("Плеер ещё загружается."); return; }
   const parsed = parseVideoUrl(url);
-  if (!parsed || parsed.type !== 'youtube') {
-    alert("Пока поддерживается только YouTube");
-    return;
-  }
+  if (!parsed || parsed.type !== 'youtube') { alert("Поддерживается только YouTube"); return; }
 
   const loader = document.getElementById("videoLoader");
   if (loader) loader.style.display = "flex";
 
   ytPlayer.loadVideoById(parsed.id);
-  
-  setTimeout(() => {
-    if (loader) loader.style.display = "none";
-  }, 3000);
+  setTimeout(() => { if (loader) loader.style.display = "none"; }, 3000);
 
   if (typeof window.firebaseSet !== 'undefined') {
       window.firebaseSet(window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/videoState'), {
-        videoId: parsed.id,
-        state: 1,
-        time: 0,
-        timestamp: Date.now()
+        videoId: parsed.id, state: 1, time: 0, timestamp: Date.now()
       });
   }
   addSystemMessage(`▶ Загружено видео: ${url}`);
@@ -109,25 +85,13 @@ document.getElementById("videoUrl").addEventListener("keypress", (e) => {
   if (e.key === "Enter") document.getElementById("loadVideo").click();
 });
 
-// ---------- Копирование ссылки с приглашением ----------
+// ---------- Копирование и Табы ----------
 document.getElementById("copyLink").addEventListener("click", () => {
-  const roomUrl = window.location.href;
-  const inviteText = `🎬 Залетай в CringeHouse! Будем смотреть кино вместе: ${roomUrl}`;
-  
+  const inviteText = `🎬 Залетай в CringeHouse! Будем смотреть кино вместе: ${window.location.href}`;
   navigator.clipboard.writeText(inviteText).then(() => {
     const btn = document.getElementById("copyLink");
-    const originalText = btn.textContent;
-    
-    btn.textContent = "Скопировано ✓";
-    btn.classList.add("copied");
-    
-    setTimeout(() => {
-      btn.textContent = originalText;
-      btn.classList.remove("copied");
-    }, 2000);
-  }).catch(err => {
-    console.error("Ошибка копирования:", err);
-    alert("Не удалось скопировать ссылку. Попробуй вручную.");
+    btn.textContent = "Скопировано ✓"; btn.classList.add("copied");
+    setTimeout(() => { btn.textContent = "Скопировать ссылку"; btn.classList.remove("copied"); }, 2000);
   });
 });
 
@@ -141,105 +105,84 @@ document.querySelectorAll(".tab").forEach((tab) => {
 });
 
 // =====================================================================
-// ВСЁ, ЧТО СВЯЗАНО С FIREBASE, ЗАПУСКАЕМ ТОЛЬКО ПОСЛЕ ЕГО ЗАГРУЗКИ
+// FIREBASE
 // =====================================================================
 window.addEventListener('firebase-ready', () => {
-  console.log("Firebase готов, настраиваем профиль, участников и чат...");
-  
   const sessionId = Math.random().toString(36).substring(2, 9);
-
-  // --- 1. ПРОФИЛЬ И АВАТАР ---
-  function updateProfileUI() {
-    const profileBtn = document.getElementById("profileBtn");
-    if (profileBtn) {
-      const currentAvatar = localStorage.getItem("wp_avatar") || '👤';
-      profileBtn.textContent = `${currentAvatar} ${userName}`;
-    }
-  }
-  updateProfileUI();
-
   const userPresenceRef = window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/users/${sessionId}`);
-  
-  const avatars = ['👤', '💩', '🤡', '🗿', '👾', '🎮', '🕹️', '👽', '🤖', '👻', '💀', '😈', '🔥', '⚡', '🚀', '💅'];
-  let myAvatar = localStorage.getItem("wp_avatar") || '👤';
 
+  // --- 1. ПРОФИЛЬ ---
   const profileModal = document.getElementById("profileModal");
   const modalNameInput = document.getElementById("modalNameInput");
-  const avatarGrid = document.getElementById("avatarGrid");
+  const modalAvatarPreview = document.getElementById("modalAvatarPreview");
+  const avatarFileInput = document.getElementById("avatarFileInput");
   const saveProfileBtn = document.getElementById("saveProfileBtn");
-  const cancelProfileBtn = document.getElementById("cancelProfileBtn");
+  const profileBtn = document.getElementById("profileBtn");
 
-  let selectedAvatar = myAvatar;
-  avatars.forEach(emoji => {
-    const div = document.createElement("div");
-    div.className = `avatar-option ${emoji === myAvatar ? 'selected' : ''}`;
-    div.textContent = emoji;
-    div.onclick = () => {
-      document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
-      div.classList.add('selected');
-      selectedAvatar = emoji;
-    };
-    avatarGrid.appendChild(div);
+  function updateProfileUI() {
+    if (profileBtn) {
+      if (myAvatar) {
+        profileBtn.innerHTML = `<img src="${myAvatar}" class="msg-avatar-img" style="width:20px;height:20px;"> ${userName || 'Гость'}`;
+      } else {
+        profileBtn.textContent = `👤 ${userName || 'Гость'}`;
+      }
+    }
+  }
+
+  // Показываем окно, если имени нет
+  if (!userName) {
+    profileModal.style.display = "flex";
+  } else {
+    updateProfileUI();
+  }
+
+  avatarFileInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => { modalAvatarPreview.src = event.target.result; };
+      reader.readAsDataURL(file);
+    }
   });
 
-  document.getElementById("profileBtn").addEventListener("click", () => {
-    modalNameInput.value = userName;
-    selectedAvatar = myAvatar;
-    document.querySelectorAll('.avatar-option').forEach(el => {
-      if (el.textContent === myAvatar) el.classList.add('selected');
-      else el.classList.remove('selected');
-    });
+  profileBtn.addEventListener("click", () => {
+    modalNameInput.value = userName || "";
+    modalAvatarPreview.src = myAvatar || "";
     profileModal.style.display = "flex";
   });
 
-  cancelProfileBtn.onclick = () => {
-    profileModal.style.display = "none";
-  };
-
   saveProfileBtn.onclick = () => {
     const newName = modalNameInput.value.trim();
-    if (!newName) {
-      alert("Имя не может быть пустым!");
-      return;
-    }
+    if (!newName) { alert("Введите никнейм!"); return; }
+    
+    userName = newName;
+    localStorage.setItem("wp_userName", userName);
 
-    if (newName !== userName) {
-      userName = newName;
-      localStorage.setItem("wp_userName", userName);
-      addSystemMessage(`✏️ Вы сменили имя на: ${userName}`);
-    }
-
-    if (selectedAvatar !== myAvatar) {
-      myAvatar = selectedAvatar;
+    if (modalAvatarPreview.src && modalAvatarPreview.src !== myAvatar) {
+      myAvatar = modalAvatarPreview.src;
       localStorage.setItem("wp_avatar", myAvatar);
-      addSystemMessage(`🖼️ Вы сменили аватар на ${myAvatar}`);
     }
 
     window.firebaseSet(userPresenceRef, { name: userName, avatar: myAvatar, joinedAt: Date.now() });
     updateProfileUI();
     profileModal.style.display = "none";
+    addSystemMessage(`✏️ Профиль обновлен: ${userName}`);
   };
 
-  // --- 2. УЧАСТНИКИ И УВЕДОМЛЕНИЯ ---
-  window.firebaseSet(userPresenceRef, { name: userName, avatar: myAvatar, joinedAt: Date.now() });
+  // --- 2. УЧАСТНИКИ ---
+  window.firebaseSet(userPresenceRef, { name: userName || "Гость", avatar: myAvatar, joinedAt: Date.now() });
   
   const systemMessagesRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/messages');
-  
-  window.firebasePush(systemMessagesRef, {
-    author: "Система",
-    text: `👋 ${userName} присоединился к комнате`,
-    timestamp: Date.now(),
-    isSystem: true
-  });
+  if (userName) {
+    window.firebasePush(systemMessagesRef, {
+      author: "Система", text: `👋 ${userName} присоединился`, timestamp: Date.now(), isSystem: true
+    });
+  }
 
   window.onDisconnect(userPresenceRef).remove();
-  
   const disconnectMessageRef = window.firebasePush(systemMessagesRef); 
   window.onDisconnect(disconnectMessageRef).set({
-    author: "Система",
-    text: `🚪 ${userName} покинул комнату`,
-    timestamp: Date.now(),
-    isSystem: true
+    author: "Система", text: `🚪 ${userName || "Гость"} покинул комнату`, timestamp: Date.now(), isSystem: true
   });
 
   const usersListRef = window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/users`);
@@ -258,20 +201,20 @@ window.addEventListener('firebase-ready', () => {
     users.forEach((user) => {
       const li = document.createElement("li");
       const isMe = user.name === userName;
-      const userAvatar = user.avatar || '👤';
-      li.innerHTML = `${userAvatar} ${user.name} ${isMe ? '<span style="color: var(--accent); font-size: 12px;">(Вы)</span>' : ''}`;
+      
+      let avatarHtml = user.avatar ? `<img src="${user.avatar}" class="user-list-avatar">` : '👤';
+      li.innerHTML = `${avatarHtml} ${user.name} ${isMe ? '<span style="color: var(--accent); font-size: 12px;">(Вы)</span>' : ''}`;
       usersListElement.appendChild(li);
     });
   });
 
-  // --- 3. СИНХРОНИЗАЦИЯ ВИДЕО (БЕЗ ГРОМКОСТИ) ---
+  // --- 3. СИНХРОНИЗАЦИЯ ВИДЕО ---
   const videoStateRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/videoState');
   window.firebaseOnValue(videoStateRef, (snapshot) => {
     const data = snapshot.val();
     if (!data || !data.videoId || !ytPlayer) return;
 
     const currentVideoId = ytPlayer.getVideoData().video_id;
-    
     if (currentVideoId !== data.videoId) {
       isRemoteAction = true;
       ytPlayer.loadVideoById(data.videoId, data.time);
@@ -284,24 +227,19 @@ window.addEventListener('firebase-ready', () => {
 
     const currentState = ytPlayer.getPlayerState();
     if (data.state === 2 && currentState === 1) { 
-      isRemoteAction = true;
-      ytPlayer.pauseVideo();
-      ytPlayer.seekTo(data.time);
+      isRemoteAction = true; ytPlayer.pauseVideo(); ytPlayer.seekTo(data.time);
     } else if (data.state === 1 && currentState === 2) { 
-      isRemoteAction = true;
-      ytPlayer.seekTo(data.time);
-      ytPlayer.playVideo();
+      isRemoteAction = true; ytPlayer.seekTo(data.time); ytPlayer.playVideo();
     }
   });
 
-  // --- 4. ЧАТ С ИСТОРИЕЙ И РЕАКЦИЯМИ ---
+  // --- 4. ЧАТ ---
   const chatMessages = document.getElementById("chatMessages");
   const chatForm = document.getElementById("chatForm");
   const chatInput = document.getElementById("chatInput");
   const messagesRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/messages');
 
   const reactionEmojis = ['❤️', '😂', '🔥', '👍', '😮', '😢', '🎉'];
-
   const contextMenu = document.createElement('div');
   contextMenu.className = 'reaction-context-menu';
   contextMenu.style.display = 'none';
@@ -317,10 +255,7 @@ window.addEventListener('firebase-ready', () => {
     contextMenu.appendChild(span);
   });
   document.body.appendChild(contextMenu);
-
-  document.addEventListener('click', () => {
-    contextMenu.style.display = 'none';
-  });
+  document.addEventListener('click', () => { contextMenu.style.display = 'none'; });
 
   function renderMessage(msgId, data) {
     if (document.getElementById(`msg-${msgId}`)) return;
@@ -339,7 +274,7 @@ window.addEventListener('firebase-ready', () => {
     const isMe = data.author === userName;
     if (isMe) el.classList.add("my-message");
 
-    const authorAvatar = data.avatar || '👤';
+    const avatarHtml = data.avatar ? `<img src="${data.avatar}" class="msg-avatar-img">` : '👤';
 
     let reactionsHtml = '';
     if (data.reactions) {
@@ -355,7 +290,7 @@ window.addEventListener('firebase-ready', () => {
     }
 
     el.innerHTML = `
-      <div class="msg-author">${authorAvatar} ${data.author}</div>
+      <div class="msg-author">${avatarHtml} ${data.author}</div>
       <div class="msg-text">${data.text}</div>
       <div class="msg-reactions-display">${reactionsHtml}</div>
     `;
@@ -381,13 +316,9 @@ window.addEventListener('firebase-ready', () => {
   window.firebaseOnValue(messagesRef, (snapshot) => {
     const messagesData = snapshot.val();
     if (!messagesData) return;
-
     const sortedMessages = Object.entries(messagesData).sort((a, b) => a[1].timestamp - b[1].timestamp);
-
     chatMessages.innerHTML = ""; 
-    sortedMessages.forEach(([id, data]) => {
-      renderMessage(id, data);
-    });
+    sortedMessages.forEach(([id, data]) => renderMessage(id, data));
   });
 
   chatForm.addEventListener("submit", (e) => {
@@ -396,7 +327,7 @@ window.addEventListener('firebase-ready', () => {
     if (!text) return;
     
     window.firebasePush(messagesRef, { 
-      author: userName, 
+      author: userName || "Гость", 
       avatar: myAvatar,
       text: text, 
       timestamp: Date.now(),
@@ -411,7 +342,7 @@ window.addEventListener('firebase-ready', () => {
     window.firebaseSet(reactionRef, emoji);
   };
 
-  // --- 5. ЭМОДЗИ ДЛЯ ВВОДА ТЕКСТА ---
+  // --- 5. ЭМОДЗИ ---
   const emojiList = [
     '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾', '👋', '🤚', '🖐', '✋', '🖖', '👌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '🔥', '💯', '💢', '💥', '💫', '💦', '💨', '🕳', '💣', '💬', '👁️‍🗨️'
   ];
@@ -430,16 +361,12 @@ window.addEventListener('firebase-ready', () => {
       });
       emojiPicker.appendChild(span);
     });
-
     emojiBtn.addEventListener('click', (e) => {
       e.preventDefault(); 
       emojiPicker.style.display = (emojiPicker.style.display === 'none' || emojiPicker.style.display === '') ? 'grid' : 'none';
     });
-
     document.addEventListener('click', (e) => {
-      if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
-        emojiPicker.style.display = 'none';
-      }
+      if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) emojiPicker.style.display = 'none';
     });
   }
 });
