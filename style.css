@@ -121,7 +121,9 @@ body {
 .users-list li {
   padding: 10px 12px; background: var(--panel-2); border-radius: 8px; margin-bottom: 8px;
   font-size: 14px; display: flex; align-items: center; gap: 8px;
+  cursor: pointer; transition: background 0.2s, transform 0.2s;
 }
+.users-list li:hover { background: var(--border); transform: translateX(5px); }
 
 /* Скроллбар */
 ::-webkit-scrollbar { width: 8px; }
@@ -135,7 +137,7 @@ body {
   .sidebar { width: 100%; min-width: 100%; height: 40%; border-left: none; border-top: 1px solid var(--border); }
 }
 
-/* Профиль и модальное окно */
+/* Профиль и модальные окна */
 #profileBtn { transition: all 0.2s; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #profileBtn:hover { filter: brightness(1.2); transform: scale(1.02); }
 
@@ -150,7 +152,7 @@ body {
 .modal-content {
   background: var(--panel); padding: 24px; border-radius: var(--radius);
   width: 90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-  border: 1px solid var(--border); animation: popIn 0.3s ease-out;
+  border: 1px solid var(--border); animation: popIn 0.3s ease-out; position: relative;
 }
 @keyframes popIn { from { opacity: 0; transform: scale(0.9) translateY(5px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 
@@ -176,6 +178,18 @@ body {
   vertical-align: middle; margin-right: 5px; border: 1px solid var(--border);
 }
 .user-list-avatar { width: 30px; height: 30px; }
+
+/* Модальное окно профиля участника */
+.view-avatar {
+  width: 120px; height: 120px; border-radius: 50%; object-fit: cover;
+  border: 3px solid var(--accent); background: var(--panel-2);
+  box-shadow: 0 0 20px rgba(124, 92, 255, 0.4);
+}
+.close-user-btn {
+  position: absolute; top: 15px; right: 15px; background: none; border: none;
+  color: var(--text-muted); font-size: 20px; cursor: pointer; transition: color 0.2s;
+}
+.close-user-btn:hover { color: var(--accent-2); }
 
 /* Контекстное меню реакций */
 .reaction-context-menu {

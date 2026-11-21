@@ -13,7 +13,6 @@ function getRoomId() {
 const ROOM_ID = getRoomId();
 document.getElementById("roomId").textContent = ROOM_ID;
 
-// Профиль (имя и аватар в Base64)
 let userName = localStorage.getItem("wp_userName");
 let myAvatar = localStorage.getItem("wp_avatar") || "";
 
@@ -129,7 +128,6 @@ window.addEventListener('firebase-ready', () => {
     }
   }
 
-  // Показываем окно, если имени нет
   if (!userName) {
     profileModal.style.display = "flex";
   } else {
@@ -169,7 +167,26 @@ window.addEventListener('firebase-ready', () => {
     addSystemMessage(`✏️ Профиль обновлен: ${userName}`);
   };
 
-  // --- 2. УЧАСТНИКИ ---
+  // --- 2. ПРОСМОТР ПРОФИЛЯ УЧАСТНИКА ---
+  const userProfileModal = document.getElementById("userProfileModal");
+  const closeUserProfileBtn = document.getElementById("closeUserProfileBtn");
+  const viewAvatar = document.getElementById("viewAvatar");
+  const viewName = document.getElementById("viewName");
+  const mentionBtn = document.getElementById("mentionBtn");
+
+  closeUserProfileBtn.onclick = () => {
+    userProfileModal.style.display = "none";
+  };
+
+  mentionBtn.onclick = () => {
+    const nameToMention = viewName.textContent;
+    const chatInput = document.getElementById("chatInput");
+    chatInput.value += `@${nameToMention} `;
+    chatInput.focus();
+    userProfileModal.style.display = "none";
+  };
+
+  // --- 3. УЧАСТНИКИ ---
   window.firebaseSet(userPresenceRef, { name: userName || "Гость", avatar: myAvatar, joinedAt: Date.now() });
   
   const systemMessagesRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/messages');
@@ -204,11 +221,23 @@ window.addEventListener('firebase-ready', () => {
       
       let avatarHtml = user.avatar ? `<img src="${user.avatar}" class="user-list-avatar">` : '👤';
       li.innerHTML = `${avatarHtml} ${user.name} ${isMe ? '<span style="color: var(--accent); font-size: 12px;">(Вы)</span>' : ''}`;
+      
+      // Если это не мы, разрешаем клик
+      if (!isMe) {
+        li.addEventListener("click", () => {
+          viewAvatar.src = user.avatar || "https://via.placeholder.com/120x120?text=User";
+          viewName.textContent = user.name;
+          userProfileModal.style.display = "flex";
+        });
+      } else {
+        li.style.cursor = "default";
+      }
+
       usersListElement.appendChild(li);
     });
   });
 
-  // --- 3. СИНХРОНИЗАЦИЯ ВИДЕО ---
+  // --- 4. СИНХРОНИЗАЦИЯ ВИДЕО ---
   const videoStateRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/videoState');
   window.firebaseOnValue(videoStateRef, (snapshot) => {
     const data = snapshot.val();
@@ -233,7 +262,7 @@ window.addEventListener('firebase-ready', () => {
     }
   });
 
-  // --- 4. ЧАТ ---
+  // --- 5. ЧАТ ---
   const chatMessages = document.getElementById("chatMessages");
   const chatForm = document.getElementById("chatForm");
   const chatInput = document.getElementById("chatInput");
@@ -342,7 +371,7 @@ window.addEventListener('firebase-ready', () => {
     window.firebaseSet(reactionRef, emoji);
   };
 
-  // --- 5. ЭМОДЗИ ---
+  // --- 6. ЭМОДЗИ ---
   const emojiList = [
     '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾', '👋', '🤚', '🖐', '✋', '🖖', '👌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '🔥', '💯', '💢', '💥', '💫', '💦', '💨', '🕳', '💣', '💬', '👁️‍🗨️'
   ];
