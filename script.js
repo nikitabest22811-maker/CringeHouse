@@ -177,6 +177,13 @@ window.addEventListener('firebase-ready', () => {
     userProfileModal.style.display = "none";
   };
 
+  // Закрытие по клику на свободное поле (фон)
+  userProfileModal.addEventListener("click", (e) => {
+    if (e.target === userProfileModal) {
+      userProfileModal.style.display = "none";
+    }
+  });
+
   // --- 3. УЧАСТНИКИ ---
   window.firebaseSet(userPresenceRef, { name: userName || "Гость", avatar: myAvatar, joinedAt: Date.now() });
   
