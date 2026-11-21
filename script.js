@@ -172,17 +172,8 @@ window.addEventListener('firebase-ready', () => {
   const closeUserProfileBtn = document.getElementById("closeUserProfileBtn");
   const viewAvatar = document.getElementById("viewAvatar");
   const viewName = document.getElementById("viewName");
-  const mentionBtn = document.getElementById("mentionBtn");
 
   closeUserProfileBtn.onclick = () => {
-    userProfileModal.style.display = "none";
-  };
-
-  mentionBtn.onclick = () => {
-    const nameToMention = viewName.textContent;
-    const chatInput = document.getElementById("chatInput");
-    chatInput.value += `@${nameToMention} `;
-    chatInput.focus();
     userProfileModal.style.display = "none";
   };
 
@@ -222,16 +213,12 @@ window.addEventListener('firebase-ready', () => {
       let avatarHtml = user.avatar ? `<img src="${user.avatar}" class="user-list-avatar">` : '👤';
       li.innerHTML = `${avatarHtml} ${user.name} ${isMe ? '<span style="color: var(--accent); font-size: 12px;">(Вы)</span>' : ''}`;
       
-      // Если это не мы, разрешаем клик
-      if (!isMe) {
-        li.addEventListener("click", () => {
-          viewAvatar.src = user.avatar || "https://via.placeholder.com/120x120?text=User";
-          viewName.textContent = user.name;
-          userProfileModal.style.display = "flex";
-        });
-      } else {
-        li.style.cursor = "default";
-      }
+      // Разрешаем клик по любому участнику (включая себя)
+      li.addEventListener("click", () => {
+        viewAvatar.src = user.avatar || "https://via.placeholder.com/150x150?text=No+Photo";
+        viewName.textContent = user.name + (isMe ? " (Вы)" : "");
+        userProfileModal.style.display = "flex";
+      });
 
       usersListElement.appendChild(li);
     });
