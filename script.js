@@ -40,7 +40,6 @@ function addSystemMessage(text) {
 // ---------- Инициализация YouTube ----------
 let ytPlayer = null;
 let isRemoteAction = false;
-let isRemoteVolumeChange = false;
 
 window.onYouTubeIframeAPIReady = function() {
   console.log("YouTube API загружен, создаем плеер...");
@@ -50,17 +49,7 @@ window.onYouTubeIframeAPIReady = function() {
     videoId: '',
     playerVars: { 'playsinline': 1, 'rel': 0, 'origin': window.location.origin },
     events: {
-      'onReady': (event) => {
-        console.log("✅ Плеер готов!");
-        
-        // Слушаем изменение громкости нашим пользователем
-        event.target.addEventListener('onVolumeChange', () => {
-            const vol = event.target.getVolume();
-            if (!isRemoteVolumeChange && typeof window.firebaseSet !== 'undefined') {
-                window.firebaseSet(window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/volume'), vol);
-            }
-        });
-      },
+      'onReady': () => console.log("✅ Плеер готов!"),
       'onStateChange': onPlayerStateChange
     }
   });
@@ -275,7 +264,7 @@ window.addEventListener('firebase-ready', () => {
     });
   });
 
-  // --- 3. СИНХРОНИЗАЦИЯ ВИДЕО И ГРОМКОСТИ ---
+  // --- 3. СИНХРОНИЗАЦИЯ ВИДЕО (БЕЗ ГРОМКОСТИ) ---
   const videoStateRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/videoState');
   window.firebaseOnValue(videoStateRef, (snapshot) => {
     const data = snapshot.val();
@@ -304,31 +293,6 @@ window.addEventListener('firebase-ready', () => {
       ytPlayer.playVideo();
     }
   });
-
-  // Синхронизация громкости
-  const volumeRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/volume');
-  window.firebaseOnValue(volumeRef, (snapshot) => {
-    const vol = snapshot.val();
-    if (vol !== null && ytPlayer && typeof ytPlayer.setVolume === 'function') {
-      isRemoteVolumeChange = true; 
-      ytPlayer.setVolume(vol);
-      showVolumeIndicator(vol);
-      setTimeout(() => { isRemoteVolumeChange = false; }, 100);
-    }
-  });
-
-  function showVolumeIndicator(vol) {
-    let indicator = document.getElementById('volume-indicator');
-    if (!indicator) {
-      indicator = document.createElement('div');
-      indicator.id = 'volume-indicator';
-      indicator.className = 'volume-indicator';
-      document.body.appendChild(indicator);
-    }
-    indicator.textContent = `🔊 Громкость: ${vol}%`;
-    indicator.style.display = 'block';
-    setTimeout(() => { indicator.style.display = 'none'; }, 2000);
-  }
 
   // --- 4. ЧАТ С ИСТОРИЕЙ И РЕАКЦИЯМИ ---
   const chatMessages = document.getElementById("chatMessages");
