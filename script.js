@@ -23,10 +23,41 @@ const themes = ['', 'theme-light', 'theme-neon', 'theme-midnight'];
 let currentThemeIndex = parseInt(localStorage.getItem("wp_theme")) || 0;
 document.body.className = themes[currentThemeIndex];
 
-document.getElementById("themeBtn")?.addEventListener("click", () => {
-  currentThemeIndex = (currentThemeIndex + 1) % themes.length;
-  document.body.className = themes[currentThemeIndex];
-  localStorage.setItem("wp_theme", currentThemeIndex);
+const themeBtn = document.getElementById("themeBtn");
+const themeModal = document.getElementById("themeModal");
+const closeThemeModalBtn = document.getElementById("closeThemeModalBtn");
+
+if (themeBtn) {
+  themeBtn.addEventListener("click", () => {
+    themeModal.style.display = "flex";
+    document.querySelectorAll(".theme-card").forEach(card => {
+      card.classList.toggle("active", parseInt(card.dataset.theme) === currentThemeIndex);
+    });
+  });
+}
+
+if (closeThemeModalBtn) {
+  closeThemeModalBtn.addEventListener("click", () => {
+    themeModal.style.display = "none";
+  });
+  themeModal.addEventListener("click", (e) => {
+    if (e.target === themeModal) themeModal.style.display = "none";
+  });
+}
+
+document.querySelectorAll(".theme-card").forEach(card => {
+  card.addEventListener("click", () => {
+    const themeIndex = parseInt(card.dataset.theme);
+    currentThemeIndex = themeIndex;
+    
+    document.body.className = themes[currentThemeIndex];
+    localStorage.setItem("wp_theme", currentThemeIndex);
+    
+    document.querySelectorAll(".theme-card").forEach(c => c.classList.remove("active"));
+    card.classList.add("active");
+    
+    setTimeout(() => { themeModal.style.display = "none"; }, 300);
+  });
 });
 
 // ---------- Парсинг ссылок ----------

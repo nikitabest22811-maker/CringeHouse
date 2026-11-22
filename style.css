@@ -1,7 +1,6 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  /* Базовая (Темная) тема по умолчанию */
   --bg: #0f0f14;
   --panel: #1a1a22;
   --panel-2: #23232e;
@@ -13,40 +12,19 @@
   --radius: 12px;
 }
 
-/* --- ТЕМА: Светлая --- */
 body.theme-light {
-  --bg: #f0f2f5;
-  --panel: #ffffff;
-  --panel-2: #e4e6eb;
-  --border: #ccd0d5;
-  --text: #050505;
-  --text-muted: #65676b;
-  --accent: #0066ff;
-  --accent-2: #ff3366;
+  --bg: #f0f2f5; --panel: #ffffff; --panel-2: #e4e6eb; --border: #ccd0d5;
+  --text: #050505; --text-muted: #65676b; --accent: #0066ff; --accent-2: #ff3366;
 }
 
-/* --- ТЕМА: Неон (Киберпанк) --- */
 body.theme-neon {
-  --bg: #050505;
-  --panel: #111111;
-  --panel-2: #1a1a1a;
-  --border: #333333;
-  --text: #f0f0f0;
-  --text-muted: #888888;
-  --accent: #00ffcc;
-  --accent-2: #ff00ff;
+  --bg: #050505; --panel: #111111; --panel-2: #1a1a1a; --border: #333333;
+  --text: #f0f0f0; --text-muted: #888888; --accent: #00ffcc; --accent-2: #ff00ff;
 }
 
-/* --- ТЕМА: Полночь (Темно-синяя) --- */
 body.theme-midnight {
-  --bg: #0a1128;
-  --panel: #121c3d;
-  --panel-2: #1c2b5e;
-  --border: #2a4088;
-  --text: #e0e6ff;
-  --text-muted: #8fa0cc;
-  --accent: #4d7cff;
-  --accent-2: #00b4d8;
+  --bg: #0a1128; --panel: #121c3d; --panel-2: #1c2b5e; --border: #2a4088;
+  --text: #e0e6ff; --text-muted: #8fa0cc; --accent: #4d7cff; --accent-2: #00b4d8;
 }
 
 body {
@@ -56,7 +34,6 @@ body {
 
 .app { display: flex; flex-direction: column; height: 100vh; }
 
-/* Шапка */
 .header {
   display: flex; justify-content: space-between; align-items: center;
   padding: 14px 24px; background: var(--panel);
@@ -75,13 +52,10 @@ body {
 .room-info { display: flex; align-items: center; gap: 12px; color: var(--text-muted); font-size: 14px; }
 .room-info b { color: var(--accent); }
 
-/* Основная часть */
 .main { display: flex; flex: 1; overflow: hidden; height: calc(100vh - 60px); }
 
-/* Левая часть с видео */
 .video-section { flex: 1; display: flex; flex-direction: column; padding: 20px; gap: 16px; min-width: 0; height: 100%; }
 
-/* Строка URL */
 .url-bar { display: flex; gap: 10px; }
 .url-bar input {
   flex: 1; padding: 12px 16px; background: var(--panel); border: 1px solid var(--border);
@@ -89,7 +63,6 @@ body {
 }
 .url-bar input:focus { border-color: var(--accent); }
 
-/* Кнопки */
 .btn {
   padding: 12px 20px; background: var(--panel-2); border: 1px solid var(--border);
   border-radius: var(--radius); color: var(--text); font-size: 14px; font-weight: 600;
@@ -100,18 +73,15 @@ body {
 .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
 .btn-small { padding: 6px 12px; font-size: 12px; }
 
-/* Контейнер плеера */
 .player-wrapper { flex: 1; background: #000; border-radius: var(--radius); overflow: hidden; position: relative; width: 100%; }
 #player { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 #player iframe { width: 100% !important; height: 100% !important; position: absolute; top: 0; left: 0; }
 
-/* Правая панель (Сайдбар) */
 .sidebar {
   width: 340px; min-width: 340px; background: var(--panel);
   border-left: 1px solid var(--border); display: flex; flex-direction: column; height: 100%; position: relative;
 }
 
-/* Вкладки в сайдбаре */
 .tabs { display: flex; border-bottom: 1px solid var(--border); }
 .tab {
   flex: 1; padding: 14px; background: none; border: none; color: var(--text-muted);
@@ -123,7 +93,6 @@ body {
 .tab-content { display: none; flex: 1; overflow: hidden; flex-direction: column; }
 .tab-content.active { display: flex; }
 
-/* Чат */
 .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
 
 @keyframes messageSlideIn {
@@ -146,7 +115,6 @@ body {
 }
 .chat-form input:focus { border-color: var(--accent); }
 
-/* Участники */
 .users-list { list-style: none; padding: 16px; overflow-y: auto; }
 .users-list li {
   padding: 10px 12px; background: var(--panel-2); border-radius: 8px; margin-bottom: 8px;
@@ -155,26 +123,22 @@ body {
 }
 .users-list li:hover { background: var(--border); transform: translateX(5px); }
 
-/* Скроллбар */
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
-/* Мобильная версия */
 @media (max-width: 900px) {
   .main { flex-direction: column; }
   .sidebar { width: 100%; min-width: 100%; height: 40%; border-left: none; border-top: 1px solid var(--border); }
 }
 
-/* Профиль */
 #profileBtn { transition: all 0.2s; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #profileBtn:hover { filter: brightness(1.2); transform: scale(1.02); }
 
 .my-message .msg-text { background: rgba(124, 92, 255, 0.2); border: 1px solid rgba(124, 92, 255, 0.3); }
 .my-message .msg-author { color: var(--accent-2); }
 
-/* Модальные окна */
 .modal-overlay {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center;
@@ -197,7 +161,6 @@ body {
 }
 .modal-input:focus { border-color: var(--accent); }
 
-/* Кастомизация аватара */
 .avatar-customizer, .avatar-view-wrapper {
   position: relative; display: inline-flex; justify-content: center; align-items: center;
   border-radius: 50%; padding: 4px; border: 4px solid var(--accent);
@@ -209,7 +172,6 @@ body {
 }
 .view-avatar { width: 140px; height: 140px; }
 
-/* Шляпа поверх аватара */
 .hat-preview {
   position: absolute; top: -25px; left: 50%;
   transform: translateX(-50%) rotate(5deg);
@@ -218,7 +180,6 @@ body {
 }
 .view-hat { font-size: 65px; top: -35px; }
 
-/* Выбор шляп */
 .hat-picker { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
 .hat-option {
   background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px;
@@ -227,7 +188,6 @@ body {
 .hat-option:hover { background: var(--border); }
 .hat-option.selected { border-color: var(--accent); background: rgba(124, 92, 255, 0.2); }
 
-/* Аватарки в чате и списке */
 .msg-avatar-img, .user-list-avatar {
   width: 24px; height: 24px; border-radius: 50%; object-fit: cover;
   vertical-align: middle; margin-right: 5px; border: 2px solid var(--border);
@@ -236,7 +196,6 @@ body {
 .msg-avatar-img:hover, .user-list-avatar:hover { transform: scale(1.2); z-index: 10; }
 .user-list-avatar { width: 32px; height: 32px; }
 
-/* Контейнер аватарки в чате */
 .chat-avatar-container {
   position: relative; display: inline-block;
   width: 24px; height: 24px; margin-right: 5px; vertical-align: middle;
@@ -251,7 +210,6 @@ body {
   filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));
 }
 
-/* Контейнер аватарки в шапке */
 .header-avatar-container {
   position: relative; display: inline-flex; align-items: center; justify-content: center;
   width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--accent);
@@ -263,7 +221,6 @@ body {
   font-size: 20px; z-index: 10; pointer-events: none; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));
 }
 
-/* Окно просмотра профиля */
 .profile-view-modal {
   max-width: 300px; text-align: center; padding: 30px 20px;
   display: flex; flex-direction: column; align-items: center;
@@ -278,7 +235,6 @@ body {
 }
 .close-user-btn:hover { color: var(--accent-2); }
 
-/* Контекстное меню реакций */
 .reaction-context-menu {
   position: absolute; background: var(--panel-2); border: 1px solid var(--border);
   border-radius: 25px; padding: 6px 12px; display: flex; gap: 8px;
@@ -296,7 +252,6 @@ body {
 .reaction-badge:hover { background: var(--border); }
 .reaction-badge.my-reaction { border-color: var(--accent); background: rgba(124, 92, 255, 0.1); }
 
-/* Эмодзи панель */
 #emojiPicker {
   position: absolute; bottom: 60px; left: 0; width: 100%; background: var(--panel-2);
   border-top: 1px solid var(--border); padding: 10px; display: grid;
@@ -306,7 +261,6 @@ body {
 #emojiPicker span { cursor: pointer; font-size: 20px; text-align: center; padding: 5px; border-radius: 4px; transition: background 0.2s; }
 #emojiPicker span:hover { background: var(--border); }
 
-/* Лоадер */
 .video-loader {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
   background: rgba(0, 0, 0, 0.8); display: flex; justify-content: center; align-items: center;
@@ -320,6 +274,24 @@ body {
 
 #copyLink { transition: all 0.3s; }
 #copyLink.copied { background: #4caf50 !important; color: white; }
+
+/* Сетка для выбора тем */
+.theme-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
+.theme-card {
+  background: var(--panel-2); border: 2px solid var(--border); border-radius: var(--radius);
+  padding: 10px; cursor: pointer; text-align: center; transition: all 0.2s;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.theme-card:hover { transform: translateY(-3px); border-color: var(--accent); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+.theme-preview-bg {
+  width: 100%; height: 60px; border-radius: 8px; display: flex; justify-content: center; align-items: center;
+  font-size: 24px; border: 1px solid var(--border);
+}
+.theme-preview-default .theme-preview-bg { background: linear-gradient(135deg, #0f0f14, #1a1a22); color: #7c5cff; }
+.theme-preview-light .theme-preview-bg { background: linear-gradient(135deg, #f0f2f5, #ffffff); color: #0066ff; }
+.theme-preview-neon .theme-preview-bg { background: linear-gradient(135deg, #050505, #1a1a1a); color: #00ffcc; border-color: #00ffcc; }
+.theme-preview-midnight .theme-preview-bg { background: linear-gradient(135deg, #0a1128, #121c3d); color: #4d7cff; }
+.theme-card.active { border-color: var(--accent); box-shadow: 0 0 15px rgba(124, 92, 255, 0.3); }
 
 /* Анимация скримера */
 @keyframes shake {

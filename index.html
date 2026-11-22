@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
@@ -17,7 +17,7 @@
       
       <div class="room-info">
         <span>Комната: <b id="roomId">—</b></span>
-        <button id="themeBtn" class="btn btn-small">🎨 Тема</button>
+        <button id="themeBtn" class="btn btn-small">🎨 Сменить тему</button>
         <button id="profileBtn" class="btn btn-small" style="background: var(--accent-2); color: white; border: none;">👤 Профиль</button>
         <button id="copyLink" class="btn btn-small">Скопировать ссылку</button>
       </div>
@@ -121,6 +121,34 @@
       </div>
       
       <h2 id="viewName"></h2>
+    </div>
+  </div>
+
+  <!-- Модальное окно выбора темы -->
+  <div id="themeModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 500px;">
+      <h3>Выберите тему</h3>
+      <div class="theme-grid">
+        <div class="theme-card theme-preview-default" data-theme="0">
+          <div class="theme-preview-bg">Aa</div>
+          <span>Стандартная</span>
+        </div>
+        <div class="theme-card theme-preview-light" data-theme="1">
+          <div class="theme-preview-bg">Aa</div>
+          <span>Светлая</span>
+        </div>
+        <div class="theme-card theme-preview-neon" data-theme="2">
+          <div class="theme-preview-bg">Aa</div>
+          <span>Неон</span>
+        </div>
+        <div class="theme-card theme-preview-midnight" data-theme="3">
+          <div class="theme-preview-bg">Aa</div>
+          <span>Полночь</span>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="closeThemeModalBtn" class="btn">Закрыть</button>
+      </div>
     </div>
   </div>
 
