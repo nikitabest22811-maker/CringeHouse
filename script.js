@@ -18,6 +18,17 @@ let myAvatar = localStorage.getItem("wp_avatar") || "";
 let myColor = localStorage.getItem("wp_color") || "#7c5cff";
 let myHat = localStorage.getItem("wp_hat") || "";
 
+// --- ТЕМЫ ---
+const themes = ['', 'theme-light', 'theme-neon', 'theme-midnight'];
+let currentThemeIndex = parseInt(localStorage.getItem("wp_theme")) || 0;
+document.body.className = themes[currentThemeIndex];
+
+document.getElementById("themeBtn")?.addEventListener("click", () => {
+  currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+  document.body.className = themes[currentThemeIndex];
+  localStorage.setItem("wp_theme", currentThemeIndex);
+});
+
 // ---------- Парсинг ссылок ----------
 function parseVideoUrl(url) {
   url = url.trim();
@@ -141,7 +152,6 @@ window.addEventListener('firebase-ready', () => {
   function updateProfileUI() {
     if (profileBtn) {
       if (myAvatar) {
-        // В шапке тоже добавляем контейнер для шляпы
         const hatHtml = myHat ? `<div class="header-hat">${myHat}</div>` : '';
         profileBtn.innerHTML = `
           <div class="header-avatar-container" style="border-color: ${myColor};">
@@ -236,6 +246,34 @@ window.addEventListener('firebase-ready', () => {
   userProfileModal.addEventListener("click", (e) => {
     if (e.target === userProfileModal) userProfileModal.style.display = "none";
   });
+
+  // --- 2.5. СКРИМЕР ---
+  const scareBtn = document.getElementById("scareBtn");
+  const scareScreen = document.getElementById("scareScreen");
+  const scareAudio = document.getElementById("scareAudio");
+  const scareRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/scare');
+
+  if (scareBtn) {
+    scareBtn.addEventListener("click", () => {
+      window.firebaseSet(scareRef, { timestamp: Date.now(), by: userName });
+      addSystemMessage(`💀 ${userName} решил напугать всех!`);
+    });
+  }
+
+  if (scareRef) {
+    window.firebaseOnValue(scareRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data && data.timestamp && (Date.now() - data.timestamp < 3000)) {
+        scareScreen.style.display = "flex";
+        scareAudio.currentTime = 0;
+        scareAudio.play().catch(e => console.log("Звук заблокирован:", e));
+        setTimeout(() => {
+          scareScreen.style.display = "none";
+          scareAudio.pause();
+        }, 3000); 
+      }
+    });
+  }
 
   // --- 3. УЧАСТНИКИ ---
   window.firebaseSet(userPresenceRef, { 
@@ -360,7 +398,6 @@ window.addEventListener('firebase-ready', () => {
     const isMe = data.author === userName;
     if (isMe) el.classList.add("my-message");
 
-    // Создаем контейнер для аватарки и шляпы в чате
     let avatarHtml = '';
     if (data.avatar) {
       const hatHtml = data.hat ? `<div class="chat-hat" style="font-size: 18px;">${data.hat}</div>` : '';
@@ -393,7 +430,6 @@ window.addEventListener('firebase-ready', () => {
       <div class="msg-reactions-display">${reactionsHtml}</div>
     `;
     
-    // Делаем аватарку кликабельной
     if (data.avatar) {
       el.querySelector('.chat-avatar-container').addEventListener('click', (e) => {
         e.stopPropagation();

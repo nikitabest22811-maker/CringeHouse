@@ -1,6 +1,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
+  /* Базовая (Темная) тема по умолчанию */
   --bg: #0f0f14;
   --panel: #1a1a22;
   --panel-2: #23232e;
@@ -10,6 +11,42 @@
   --accent: #7c5cff;
   --accent-2: #ff5c8a;
   --radius: 12px;
+}
+
+/* --- ТЕМА: Светлая --- */
+body.theme-light {
+  --bg: #f0f2f5;
+  --panel: #ffffff;
+  --panel-2: #e4e6eb;
+  --border: #ccd0d5;
+  --text: #050505;
+  --text-muted: #65676b;
+  --accent: #0066ff;
+  --accent-2: #ff3366;
+}
+
+/* --- ТЕМА: Неон (Киберпанк) --- */
+body.theme-neon {
+  --bg: #050505;
+  --panel: #111111;
+  --panel-2: #1a1a1a;
+  --border: #333333;
+  --text: #f0f0f0;
+  --text-muted: #888888;
+  --accent: #00ffcc;
+  --accent-2: #ff00ff;
+}
+
+/* --- ТЕМА: Полночь (Темно-синяя) --- */
+body.theme-midnight {
+  --bg: #0a1128;
+  --panel: #121c3d;
+  --panel-2: #1c2b5e;
+  --border: #2a4088;
+  --text: #e0e6ff;
+  --text-muted: #8fa0cc;
+  --accent: #4d7cff;
+  --accent-2: #00b4d8;
 }
 
 body {
@@ -199,6 +236,33 @@ body {
 .msg-avatar-img:hover, .user-list-avatar:hover { transform: scale(1.2); z-index: 10; }
 .user-list-avatar { width: 32px; height: 32px; }
 
+/* Контейнер аватарки в чате */
+.chat-avatar-container {
+  position: relative; display: inline-block;
+  width: 24px; height: 24px; margin-right: 5px; vertical-align: middle;
+}
+.chat-avatar-container .msg-avatar-img {
+  width: 100%; height: 100%; margin-right: 0; border-radius: 50%; object-fit: cover;
+}
+.chat-hat {
+  position: absolute; top: -12px; left: 50%;
+  transform: translateX(-50%) rotate(10deg);
+  z-index: 10; pointer-events: none;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));
+}
+
+/* Контейнер аватарки в шапке */
+.header-avatar-container {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--accent);
+  margin-right: 5px; vertical-align: middle;
+}
+.header-avatar-container img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.header-hat {
+  position: absolute; top: -14px; left: 50%; transform: translateX(-50%) rotate(10deg);
+  font-size: 20px; z-index: 10; pointer-events: none; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));
+}
+
 /* Окно просмотра профиля */
 .profile-view-modal {
   max-width: 300px; text-align: center; padding: 30px 20px;
@@ -256,32 +320,18 @@ body {
 
 #copyLink { transition: all 0.3s; }
 #copyLink.copied { background: #4caf50 !important; color: white; }
-/* Контейнер для аватарки в чате */
-.chat-avatar-container {
-  position: relative;
-  display: inline-block;
-  width: 24px; /* Ширина как у аватарки */
-  height: 24px;
-  margin-right: 5px;
-  vertical-align: middle;
-}
 
-/* Сама аватарка в чате */
-.chat-avatar-container .msg-avatar-img {
-  width: 100%;
-  height: 100%;
-  margin-right: 0; /* Убираем старый отступ */
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-/* Шляпа над аватаркой в чате */
-.chat-hat {
-  position: absolute;
-  top: -12px; /* Поднимаем над головой */
-  left: 50%;
-  transform: translateX(-50%) rotate(10deg); /* Наклоняем для стиля */
-  z-index: 10;
-  pointer-events: none;
-  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));
+/* Анимация скримера */
+@keyframes shake {
+  0% { transform: translate(1px, 1px) rotate(0deg); }
+  10% { transform: translate(-1px, -2px) rotate(-1deg); }
+  20% { transform: translate(-3px, 0px) rotate(1deg); }
+  30% { transform: translate(3px, 2px) rotate(0deg); }
+  40% { transform: translate(1px, -1px) rotate(1deg); }
+  50% { transform: translate(-1px, 2px) rotate(-1deg); }
+  60% { transform: translate(-3px, 1px) rotate(0deg); }
+  70% { transform: translate(3px, 1px) rotate(-1deg); }
+  80% { transform: translate(-1px, -1px) rotate(1deg); }
+  90% { transform: translate(1px, 2px) rotate(0deg); }
+  100% { transform: translate(1px, -2px) rotate(-1deg); }
 }
