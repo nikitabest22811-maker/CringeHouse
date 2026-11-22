@@ -15,8 +15,8 @@ document.getElementById("roomId").textContent = ROOM_ID;
 
 let userName = localStorage.getItem("wp_userName");
 let myAvatar = localStorage.getItem("wp_avatar") || "";
-let myColor = localStorage.getItem("wp_color") || "#7c5cff"; // Цвет рамки
-let myHat = localStorage.getItem("wp_hat") || ""; // Шляпа
+let myColor = localStorage.getItem("wp_color") || "#7c5cff";
+let myHat = localStorage.getItem("wp_hat") || "";
 
 // ---------- Парсинг ссылок ----------
 function parseVideoUrl(url) {
@@ -122,10 +122,9 @@ window.addEventListener('firebase-ready', () => {
   
   const avatarPreviewContainer = document.getElementById("avatarPreviewContainer");
   const hatPreview = document.getElementById("hatPreview");
-  const colorPicker = document.getElementById("colorPicker");
+  const colorPickerInput = document.getElementById("colorPickerInput");
   const hatPicker = document.getElementById("hatPicker");
 
-  // Переменные для выбора в модалке
   let tempColor = myColor;
   let tempHat = myHat;
 
@@ -142,8 +141,7 @@ window.addEventListener('firebase-ready', () => {
   function updateProfileUI() {
     if (profileBtn) {
       if (myAvatar) {
-        // В шапке показываем только аватар (без шляп, чтобы не ломать верстку)
-        profileBtn.innerHTML = `<img src="${myAvatar}" class="msg-avatar-img" style="width:20px;height:20px; border-color: ${myColor};"> ${userName || 'Гость'}`;
+        profileBtn.innerHTML = `<img src="${myAvatar}" class="msg-avatar-img" style="border-color: ${myColor};"> ${userName || 'Гость'}`;
       } else {
         profileBtn.textContent = `👤 ${userName || 'Гость'}`;
       }
@@ -153,17 +151,11 @@ window.addEventListener('firebase-ready', () => {
   if (!userName) profileModal.style.display = "flex";
   else updateProfileUI();
 
-  // Обработка выбора цвета
-  colorPicker.querySelectorAll(".color-option").forEach(opt => {
-    opt.addEventListener("click", () => {
-      colorPicker.querySelectorAll(".color-option").forEach(o => o.classList.remove("selected"));
-      opt.classList.add("selected");
-      tempColor = opt.dataset.color;
-      applyPreviewStyles();
-    });
+  colorPickerInput.addEventListener("input", (e) => {
+    tempColor = e.target.value;
+    applyPreviewStyles();
   });
 
-  // Обработка выбора шляпы
   hatPicker.querySelectorAll(".hat-option").forEach(opt => {
     opt.addEventListener("click", () => {
       hatPicker.querySelectorAll(".hat-option").forEach(o => o.classList.remove("selected"));
@@ -186,13 +178,10 @@ window.addEventListener('firebase-ready', () => {
     modalNameInput.value = userName || "";
     modalAvatarPreview.src = myAvatar || "";
     
-    // Восстанавливаем выбранные настройки при открытии
     tempColor = myColor;
     tempHat = myHat;
     
-    colorPicker.querySelectorAll(".color-option").forEach(o => {
-      o.classList.toggle("selected", o.dataset.color === myColor);
-    });
+    colorPickerInput.value = myColor;
     hatPicker.querySelectorAll(".hat-option").forEach(o => {
       o.classList.toggle("selected", o.dataset.hat === myHat);
     });
@@ -218,13 +207,8 @@ window.addEventListener('firebase-ready', () => {
       localStorage.setItem("wp_avatar", myAvatar);
     }
 
-    // Отправляем ВСЕ данные в базу
     window.firebaseSet(userPresenceRef, { 
-      name: userName, 
-      avatar: myAvatar, 
-      color: myColor, 
-      hat: myHat,
-      joinedAt: Date.now() 
+      name: userName, avatar: myAvatar, color: myColor, hat: myHat, joinedAt: Date.now() 
     });
     
     updateProfileUI();
@@ -237,7 +221,7 @@ window.addEventListener('firebase-ready', () => {
   const closeUserProfileBtn = document.getElementById("closeUserProfileBtn");
   const viewAvatar = document.getElementById("viewAvatar");
   const viewName = document.getElementById("viewName");
-  const viewAvatarContainer = document.getElementById("viewAvatarContainer");
+  const viewAvatarWrapper = document.getElementById("viewAvatarWrapper");
   const viewHat = document.getElementById("viewHat");
 
   closeUserProfileBtn.onclick = () => { userProfileModal.style.display = "none"; };
@@ -247,11 +231,7 @@ window.addEventListener('firebase-ready', () => {
 
   // --- 3. УЧАСТНИКИ ---
   window.firebaseSet(userPresenceRef, { 
-    name: userName || "Гость", 
-    avatar: myAvatar, 
-    color: myColor, 
-    hat: myHat,
-    joinedAt: Date.now() 
+    name: userName || "Гость", avatar: myAvatar, color: myColor, hat: myHat, joinedAt: Date.now() 
   });
   
   const systemMessagesRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/messages');
@@ -285,13 +265,11 @@ window.addEventListener('firebase-ready', () => {
       const isMe = user.name === userName;
       
       let avatarHtml = user.avatar ? `<img src="${user.avatar}" class="user-list-avatar" style="border-color: ${user.color || 'var(--border)'};">` : '👤';
-      // В списке показываем ник, эмодзи шляпы и аватар
-      const hatHtml = user.hat ? `${user.hat} ` : "";
-      li.innerHTML = `${avatarHtml} ${hatHtml}${user.name} ${isMe ? '<span style="color: var(--accent); font-size: 12px;">(Вы)</span>' : ''}`;
+      li.innerHTML = `${avatarHtml} <span>${user.name} ${isMe ? '<span style="color: var(--accent); font-size: 12px;">(Вы)</span>' : ''}</span>`;
       
       li.addEventListener("click", () => {
         viewAvatar.src = user.avatar || "https://via.placeholder.com/150x150?text=No+Photo";
-        viewAvatarContainer.style.borderColor = user.color || "var(--accent)";
+        viewAvatarWrapper.style.borderColor = user.color || "var(--accent)";
         
         if (user.hat) {
           viewHat.textContent = user.hat;
@@ -375,7 +353,6 @@ window.addEventListener('firebase-ready', () => {
     if (isMe) el.classList.add("my-message");
 
     const avatarHtml = data.avatar ? `<img src="${data.avatar}" class="msg-avatar-img" style="border-color: ${data.color || 'var(--border)'};">` : '👤';
-    const hatHtml = data.hat ? `${data.hat} ` : "";
 
     let reactionsHtml = '';
     if (data.reactions) {
@@ -391,11 +368,29 @@ window.addEventListener('firebase-ready', () => {
     }
 
     el.innerHTML = `
-      <div class="msg-author">${avatarHtml} ${hatHtml}${data.author}</div>
+      <div class="msg-author">${avatarHtml} ${data.author}</div>
       <div class="msg-text">${data.text}</div>
       <div class="msg-reactions-display">${reactionsHtml}</div>
     `;
     
+    if (data.avatar) {
+      el.querySelector('.msg-avatar-img').addEventListener('click', (e) => {
+        e.stopPropagation();
+        viewAvatar.src = data.avatar;
+        viewAvatarWrapper.style.borderColor = data.color || "var(--accent)";
+        
+        if (data.hat) {
+          viewHat.textContent = data.hat;
+          viewHat.style.display = "block";
+        } else {
+          viewHat.style.display = "none";
+        }
+        
+        viewName.textContent = data.author + (isMe ? " (Вы)" : "");
+        userProfileModal.style.display = "flex";
+      });
+    }
+
     el.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       contextMenu.dataset.msgId = msgId;
@@ -428,13 +423,8 @@ window.addEventListener('firebase-ready', () => {
     if (!text) return;
     
     window.firebasePush(messagesRef, { 
-      author: userName || "Гость", 
-      avatar: myAvatar,
-      color: myColor,
-      hat: myHat,
-      text: text, 
-      timestamp: Date.now(),
-      reactions: {}
+      author: userName || "Гость", avatar: myAvatar, color: myColor, hat: myHat,
+      text: text, timestamp: Date.now(), reactions: {}
     });
     
     chatInput.value = "";
