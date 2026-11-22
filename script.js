@@ -141,7 +141,15 @@ window.addEventListener('firebase-ready', () => {
   function updateProfileUI() {
     if (profileBtn) {
       if (myAvatar) {
-        profileBtn.innerHTML = `<img src="${myAvatar}" class="msg-avatar-img" style="border-color: ${myColor};"> ${userName || 'Гость'}`;
+        // В шапке тоже добавляем контейнер для шляпы
+        const hatHtml = myHat ? `<div class="header-hat">${myHat}</div>` : '';
+        profileBtn.innerHTML = `
+          <div class="header-avatar-container" style="border-color: ${myColor};">
+            <img src="${myAvatar}" class="msg-avatar-img" style="border: none;">
+            ${hatHtml}
+          </div> 
+          ${userName || 'Гость'}
+        `;
       } else {
         profileBtn.textContent = `👤 ${userName || 'Гость'}`;
       }
@@ -352,7 +360,19 @@ window.addEventListener('firebase-ready', () => {
     const isMe = data.author === userName;
     if (isMe) el.classList.add("my-message");
 
-    const avatarHtml = data.avatar ? `<img src="${data.avatar}" class="msg-avatar-img" style="border-color: ${data.color || 'var(--border)'};">` : '👤';
+    // Создаем контейнер для аватарки и шляпы в чате
+    let avatarHtml = '';
+    if (data.avatar) {
+      const hatHtml = data.hat ? `<div class="chat-hat" style="font-size: 18px;">${data.hat}</div>` : '';
+      avatarHtml = `
+        <div class="chat-avatar-container">
+          <img src="${data.avatar}" class="msg-avatar-img" style="border-color: ${data.color || 'var(--border)'};">
+          ${hatHtml}
+        </div>
+      `;
+    } else {
+      avatarHtml = '👤';
+    }
 
     let reactionsHtml = '';
     if (data.reactions) {
@@ -373,8 +393,9 @@ window.addEventListener('firebase-ready', () => {
       <div class="msg-reactions-display">${reactionsHtml}</div>
     `;
     
+    // Делаем аватарку кликабельной
     if (data.avatar) {
-      el.querySelector('.msg-avatar-img').addEventListener('click', (e) => {
+      el.querySelector('.chat-avatar-container').addEventListener('click', (e) => {
         e.stopPropagation();
         viewAvatar.src = data.avatar;
         viewAvatarWrapper.style.borderColor = data.color || "var(--accent)";
