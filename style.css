@@ -307,3 +307,21 @@ body {
   90% { transform: translate(1px, 2px) rotate(0deg); }
   100% { transform: translate(1px, -2px) rotate(-1deg); }
 }
+
+/* Сетка для выбора тем */
+.theme-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
+.theme-card {
+  background: var(--panel-2); border: 2px solid var(--border); border-radius: var(--radius);
+  padding: 10px; cursor: pointer; text-align: center; transition: all 0.2s;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.theme-card:hover { transform: translateY(-3px); border-color: var(--accent); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+.theme-preview-bg {
+  width: 100%; height: 60px; border-radius: 8px; display: flex; justify-content: center; align-items: center;
+  font-size: 24px; border: 1px solid var(--border);
+}
+.theme-preview-default .theme-preview-bg { background: linear-gradient(135deg, #0f0f14, #1a1a22); color: #7c5cff; }
+.theme-preview-light .theme-preview-bg { background: linear-gradient(135deg, #f0f2f5, #ffffff); color: #0066ff; }
+.theme-preview-neon .theme-preview-bg { background: linear-gradient(135deg, #050505, #1a1a1a); color: #00ffcc; border-color: #00ffcc; }
+.theme-preview-midnight .theme-preview-bg { background: linear-gradient(135deg, #0a1128, #121c3d); color: #4d7cff; }
+.theme-card.active { border-color: var(--accent); box-shadow: 0 0 15px rgba(124, 92, 255, 0.3); }
