@@ -42,6 +42,19 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 #player { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 #player iframe { width: 100% !important; height: 100% !important; position: absolute; top: 0; left: 0; }
 
+/* Стили для вертикальных видео (Shorts) */
+#player.shorts-mode {
+  display: flex;
+  justify-content: center;
+  background: #000;
+}
+#player.shorts-mode iframe {
+  max-width: 500px !important; /* Ограничиваем ширину для вертикального формата */
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 auto;
+}
+
 .host-controls { display: flex; gap: 10px; padding: 10px; background: var(--panel); border-radius: var(--radius); border: 1px solid var(--border); align-items: center; }
 
 .sidebar { width: 340px; min-width: 340px; background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; height: 100%; position: relative; }
@@ -136,7 +149,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 #copyLink { transition: all 0.3s; }
 #copyLink.copied { background: #4caf50 !important; color: white; }
 
-/* ТЕМЫ */
+/* Сетка для выбора тем */
 .theme-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
 .theme-card { background: var(--panel-2); border: 2px solid var(--border); border-radius: var(--radius); padding: 10px; cursor: pointer; text-align: center; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .theme-card:hover { transform: translateY(-3px); border-color: var(--accent); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
@@ -147,5 +160,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 .theme-preview-midnight .theme-preview-bg { background: linear-gradient(135deg, #0a1128, #121c3d); color: #4d7cff; }
 .theme-card.active { border-color: var(--accent); box-shadow: 0 0 15px rgba(124, 92, 255, 0.3); }
 
-/* СКРИМЕР */
-@keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 10% { transform: translate(-1px, -2px) rotate(-1deg); } 20% { transform: translate(-3px, 0px) rotate(1deg); } 30% { transform: translate(3px, 2px) rotate(0deg); } 40% { transform: translate(1px, -1px) rotate(1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 60% { transform: translate(-3px, 1px) rotate(0deg); } 70% { transform: translate(3px, 1px) rotate(-1deg); } 80% { transform: translate(-1px, -1px) rotate(1deg); } 90% { transform: translate(1px, 2px) rotate(0deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
+/* Анимация скримера */
+@keyframes shake {
+  0% { transform: translate(1px, 1px) rotate(0deg); }
+  10% { transform: translate(-1px, -2px) rotate(-1deg); }
+  20% { transform: translate(-3px, 0px) rotate(1deg); }
+  30% { transform: translate(3px, 2px) rotate(0deg); }
+  40% { transform: translate(1px, -1px) rotate(1deg); }
+  50% { transform: translate(-1px, 2px) rotate(-1deg); }
+  60% { transform: translate(-3px, 1px) rotate(0deg); }
+  70% { transform: translate(3px, 1px) rotate(-1deg); }
+  80% { transform: translate(-1px, -1px) rotate(1deg); }
+  90% { transform: translate(1px, 2px) rotate(0deg); }
+  100% { transform: translate(1px, -2px) rotate(-1deg); }
+}

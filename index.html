@@ -6,7 +6,7 @@
   <title>📺 CringeHouse</title>
   
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="style.css?v=55">
+  <link rel="stylesheet" href="style.css?v=59">
 </head>
 <body>
   <div class="app">
@@ -26,7 +26,7 @@
       <!-- Левая панель: видео -->
       <section class="video-section">
         <div class="url-bar">
-          <input type="text" id="videoUrl" placeholder="Вставь ссылку на YouTube...">
+          <input type="text" id="videoUrl" placeholder="Вставь ссылку на YouTube (видео или Shorts)...">
           <button id="loadVideo" class="btn btn-primary">Загрузить</button>
         </div>
 
@@ -34,6 +34,7 @@
           <div id="videoLoader" class="video-loader" style="display: none;">
             <div class="spinner"></div>
           </div>
+          <!-- Сюда API вставит iframe, класс shorts-mode добавится автоматически -->
           <div id="player"></div>
         </div>
         
@@ -41,7 +42,7 @@
         <div id="hostControls" class="host-controls" style="display: none;">
           <button id="hostPlayPause" class="btn btn-small">⏯ Пауза/Плей</button>
           <button id="hostSkip" class="btn btn-small" style="background: var(--accent-2); border: none; color: white;">⏭ Пропустить</button>
-          <span id="hostStatus" style="margin-left: auto; font-size: 12px; color: var(--text-muted);">Вы — Ведущий 👑</span>
+          <span id="hostStatus" style="margin-left: auto; font-size: 12px; color: var(--text-muted);"></span>
         </div>
       </section>
 
@@ -75,7 +76,7 @@
             <div id="queueList" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;"></div>
             
             <div style="display: flex; gap: 5px; margin-top: 10px;">
-              <input type="text" id="queueInput" placeholder="Ссылка на YouTube..." style="flex: 1; padding: 8px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text);">
+              <input type="text" id="queueInput" placeholder="Ссылка на YouTube (видео или Shorts)..." style="flex: 1; padding: 8px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text);">
               <button id="addToQueueBtn" class="btn btn-small btn-primary">+</button>
             </div>
           </div>
@@ -197,6 +198,6 @@
   </script>
 
   <!-- 3. Основной скрипт -->
-  <script src="script.js?v=55"></script>
+  <script src="script.js?v=59"></script>
 </body>
 </html>

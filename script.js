@@ -11,7 +11,6 @@ function getRoomId() {
 }
 
 const ROOM_ID = getRoomId();
-// Если по какой-то причине ROOM_ID не определился, ставим заглушку, чтобы не было ошибки
 document.getElementById("roomId").textContent = ROOM_ID || "—";
 
 let userName = localStorage.getItem("wp_userName");
@@ -51,11 +50,12 @@ document.querySelectorAll(".theme-card").forEach(card => {
   });
 });
 
-// --- Парсинг ссылок ---
+// --- Парсинг ссылок (ВКЛЮЧАЯ SHORTS) ---
 function parseVideoUrl(url) {
   url = url.trim();
   if (!url) return null;
-  const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+  // Регулярка теперь ищет shorts
+  const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
   if (ytMatch) return { type: "youtube", id: ytMatch[1] };
   return { type: "unknown", url };
 }
@@ -95,7 +95,7 @@ function onPlayerStateChange(event) {
   }
 }
 
-// --- Загрузка видео ---
+// --- Загрузка видео (с поддержкой Shorts) ---
 document.getElementById("loadVideo").addEventListener("click", () => {
   if (myRole !== 'host' && myRole !== 'moderator') {
     alert("Только ведущий или модератор может запускать видео!");
@@ -105,6 +105,16 @@ document.getElementById("loadVideo").addEventListener("click", () => {
   if (!ytPlayer) { alert("Плеер ещё загружается."); return; }
   const parsed = parseVideoUrl(url);
   if (!parsed || parsed.type !== 'youtube') { alert("Поддерживается только YouTube"); return; }
+
+  // Проверяем, является ли это Shorts
+  const isShorts = url.includes('/shorts/');
+  const playerContainer = document.getElementById("player");
+  
+  if (isShorts) {
+    playerContainer.classList.add("shorts-mode");
+  } else {
+    playerContainer.classList.remove("shorts-mode");
+  }
 
   const loader = document.getElementById("videoLoader");
   if (loader) loader.style.display = "flex";
@@ -296,38 +306,19 @@ window.addEventListener('firebase-ready', () => {
     addSystemMessage(`🚫 Пользователь удален из комнаты.`);
   };
 
-    // --- 3. ОПРЕДЕЛЕНИЕ РОЛИ И УЧАСТНИКИ ---
-  
-  // Мы используем "once" (onlyOnce: true), чтобы получить текущее значение хоста ОДИН РАЗ при загрузке.
-  // Это предотвратит случайную перезапись, когда друг заходит в комнату.
+  // --- 3. ОПРЕДЕЛЕНИЕ РОЛИ И УЧАСТНИКИ ---
   window.firebaseOnValue(hostRef, (snapshot) => {
-    const currentHost = snapshot.val();
+    roomHostId = snapshot.val();
     
-    // Если хоста нет и у нас есть имя, мы можем стать хостом
-    if (!currentHost && userName) {
-      // Проверяем, сколько всего людей в комнате (если мы первые, то мы хост)
-      const usersRef = window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/users`);
-      window.firebaseOnValue(usersRef, (usersSnap) => {
-        const users = usersSnap.val() || {};
-        const userCount = Object.keys(users).length;
-        
-        // Если в комнате только мы (или никого), назначаем себя хостом
-        if (userCount <= 1) {
-          window.firebaseSet(hostRef, sessionId);
-          myRole = 'host';
-          roomHostId = sessionId;
-          window.firebaseSet(userPresenceRef, { role: 'host' });
-          console.log("Вы стали ведущим, так как зашли первым!");
-        }
-      }, { onlyOnce: true });
-    } else {
-      roomHostId = currentHost;
-      if (roomHostId !== sessionId) {
-        if (myRole !== 'moderator' && myRole !== 'host') myRole = 'user';
-      }
+    if (!roomHostId && userName) {
+      window.firebaseSet(hostRef, sessionId);
+      myRole = 'host';
+      roomHostId = sessionId;
+      window.firebaseSet(userPresenceRef, { role: 'host' });
+    } else if (roomHostId && roomHostId !== sessionId) {
+      if (myRole !== 'moderator' && myRole !== 'host') myRole = 'user';
     }
 
-    // Обновляем UI
     const controls = document.getElementById('hostControls');
     const status = document.getElementById('hostStatus');
     if (myRole === 'host' || myRole === 'moderator') {
@@ -336,9 +327,73 @@ window.addEventListener('firebase-ready', () => {
     } else {
       controls.style.display = 'none';
     }
-  }, { onlyOnce: true }); // <--- ВАЖНО: onlyOnce: true
+  }, { onlyOnce: true });
+
+  if (userName) {
+    window.firebaseSet(userPresenceRef, { 
+      name: userName, avatar: myAvatar, color: myColor, hat: myHat, role: myRole, joinedAt: Date.now() 
+    });
+  }
   
-  // --- 4. ОЧЕРЕДЬ ---
+  const systemMessagesRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/messages');
+  if (userName) {
+    window.firebasePush(systemMessagesRef, {
+      author: "Система", text: `👋 ${userName} присоединился`, timestamp: Date.now(), isSystem: true
+    });
+  }
+
+  window.onDisconnect(userPresenceRef).remove();
+  const disconnectMessageRef = window.firebasePush(systemMessagesRef); 
+  window.onDisconnect(disconnectMessageRef).set({
+    author: "Система", text: `🚪 ${userName || "Гость"} покинул комнату`, timestamp: Date.now(), isSystem: true
+  });
+
+  const usersListRef = window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/users`);
+  const usersListElement = document.getElementById("usersList");
+
+  window.firebaseOnValue(usersListRef, (snapshot) => {
+    const usersData = snapshot.val();
+    if (!usersData) { usersListElement.innerHTML = '<li style="color: var(--text-muted); font-style: italic;">Пока никого нет...</li>'; return; }
+    usersListElement.innerHTML = ""; 
+    const users = Object.entries(usersData);
+    users.sort((a, b) => a[1].joinedAt - b[1].joinedAt);
+
+    users.forEach(([id, user]) => {
+      const li = document.createElement("li");
+      const isMe = id === sessionId;
+      
+      let roleIcon = user.role === 'host' ? '👑 ' : user.role === 'moderator' ? '🛡️ ' : '';
+      let avatarHtml = user.avatar ? `<img src="${user.avatar}" class="user-list-avatar" style="border-color: ${user.color || 'var(--border)'};">` : '👤';
+      
+      const displayName = user.name || "Неизвестный";
+      li.innerHTML = `${avatarHtml} <span>${roleIcon}${displayName} ${isMe ? '<span style="color: var(--accent); font-size: 12px;">(Вы)</span>' : ''}</span>`;
+      
+      li.addEventListener("click", () => {
+        selectedUserId = id;
+        viewAvatar.src = user.avatar || "https://via.placeholder.com/150x150?text=No+Photo";
+        viewAvatarWrapper.style.borderColor = user.color || "var(--accent)";
+        viewHat.textContent = user.hat || "";
+        viewHat.style.display = user.hat ? "block" : "none";
+        viewName.textContent = displayName + (isMe ? " (Вы)" : "");
+        
+        adminControls.style.display = (myRole === 'host' && !isMe) ? "flex" : "none";
+        userProfileModal.style.display = "flex";
+      });
+
+      usersListElement.appendChild(li);
+    });
+  });
+
+  window.firebaseOnValue(userPresenceRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data && data.role && data.role !== myRole) {
+      myRole = data.role;
+      document.getElementById('hostControls').style.display = (myRole === 'host' || myRole === 'moderator') ? 'flex' : 'none';
+      document.getElementById('hostStatus').textContent = myRole === 'host' ? 'Вы — Ведущий 👑' : (myRole === 'moderator' ? 'Вы — Модератор 🛡️' : '');
+    }
+  });
+
+  // --- 4. ОЧЕРЕДЬ (с поддержкой Shorts) ---
   const queueRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/queue');
   const queueList = document.getElementById('queueList');
   const queueInput = document.getElementById('queueInput');
@@ -354,7 +409,7 @@ window.addEventListener('firebase-ready', () => {
       const removeBtn = (myRole === 'host' || myRole === 'moderator') ? `<button class="queue-item-remove" onclick="removeFromQueue('${id}')">✕</button>` : '';
       div.innerHTML = `
         <div class="queue-item-info">
-          <span class="queue-item-title">🎬 ${item.title || 'Видео'}</span>
+          <span class="queue-item-title">🎬 ${item.title || 'Видео'} ${item.isShorts ? '📱' : ''}</span>
           <span class="queue-item-author">Предложил: ${item.addedBy}</span>
         </div>
         ${removeBtn}
@@ -368,8 +423,15 @@ window.addEventListener('firebase-ready', () => {
     if (!url) return;
     const parsed = parseVideoUrl(url);
     if (!parsed || parsed.type !== 'youtube') { alert("Только YouTube!"); return; }
+    
+    const isShorts = url.includes('/shorts/');
+
     window.firebasePush(queueRef, {
-      videoId: parsed.id, title: "Видео " + parsed.id.substring(0, 4), addedBy: userName || "Гость", timestamp: Date.now()
+      videoId: parsed.id, 
+      title: "Видео " + parsed.id.substring(0, 4), 
+      addedBy: userName || "Гость", 
+      isShorts: isShorts,
+      timestamp: Date.now()
     });
     queueInput.value = "";
   });
@@ -384,8 +446,17 @@ window.addEventListener('firebase-ready', () => {
     window.firebaseOnValue(queueRef, (snap) => {
       const items = Object.entries(snap.val() || {});
       if (items.length > 0) {
-        ytPlayer.loadVideoById(items[0][1].videoId);
-        window.firebaseSet(window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/queue/${items[0][0]}`), null);
+        const [id, item] = items[0];
+        
+        const playerContainer = document.getElementById("player");
+        if (item.isShorts) {
+          playerContainer.classList.add("shorts-mode");
+        } else {
+          playerContainer.classList.remove("shorts-mode");
+        }
+
+        ytPlayer.loadVideoById(item.videoId);
+        window.firebaseSet(window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/queue/${id}`), null);
       } else { alert("Очередь пуста!"); }
     }, { onlyOnce: true });
   });
