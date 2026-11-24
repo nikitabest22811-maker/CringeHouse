@@ -18,6 +18,7 @@ let myAvatar = localStorage.getItem("wp_avatar") || "";
 let myColor = localStorage.getItem("wp_color") || "#7c5cff";
 let myHat = localStorage.getItem("wp_hat") || "";
 let myRole = "user";
+let roomHostId = null;
 
 // --- ТЕМЫ ---
 const themes = ['', 'theme-light', 'theme-neon', 'theme-midnight'];
@@ -84,12 +85,13 @@ function onPlayerStateChange(event) {
     if (isRemoteAction) isRemoteAction = false;
     return;
   }
-  const videoId = ytPlayer.getVideoData().video_id;
-  if (!videoId) return;
-  
-  window.firebaseSet(window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/videoState'), {
-    videoId: videoId, state: event.data, time: ytPlayer.getCurrentTime(), timestamp: Date.now()
-  });
+  if (myRole === 'host' || myRole === 'moderator') {
+    const videoId = ytPlayer.getVideoData().video_id;
+    if (!videoId) return;
+    window.firebaseSet(window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/videoState'), {
+      videoId: videoId, state: event.data, time: ytPlayer.getCurrentTime(), timestamp: Date.now()
+    });
+  }
 }
 
 // --- Загрузка видео ---
@@ -112,7 +114,7 @@ document.getElementById("loadVideo").addEventListener("click", () => {
   window.firebaseSet(window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/videoState'), {
     videoId: parsed.id, state: 1, time: 0, timestamp: Date.now()
   });
-  addSystemMessage(`▶ Ведущий запустил видео: ${url}`);
+  addSystemMessage(`▶ Запущено видео: ${url}`);
 });
 
 document.getElementById("videoUrl").addEventListener("keypress", (e) => {
@@ -144,6 +146,7 @@ document.querySelectorAll(".tab").forEach((tab) => {
 window.addEventListener('firebase-ready', () => {
   const sessionId = Math.random().toString(36).substring(2, 9);
   const userPresenceRef = window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/users/${sessionId}`);
+  const hostRef = window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/hostId`);
 
   // --- 1. ПРОФИЛЬ ---
   const profileModal = document.getElementById("profileModal");
@@ -260,6 +263,7 @@ window.addEventListener('firebase-ready', () => {
 
   document.getElementById("makeHostBtn").onclick = () => {
     if (myRole !== 'host' || !selectedUserId) return;
+    window.firebaseSet(hostRef, selectedUserId);
     window.firebaseSet(window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/users/${selectedUserId}/role`), 'host');
     window.firebaseSet(userPresenceRef, { role: 'moderator' }); 
     userProfileModal.style.display = "none";
@@ -280,7 +284,31 @@ window.addEventListener('firebase-ready', () => {
     addSystemMessage(`🚫 Пользователь удален из комнаты.`);
   };
 
-  // --- 3. УЧАСТНИКИ ---
+  // --- 3. ОПРЕДЕЛЕНИЕ РОЛИ И УЧАСТНИКИ ---
+  window.firebaseOnValue(hostRef, (snapshot) => {
+    roomHostId = snapshot.val();
+    
+    if (!roomHostId) {
+      window.firebaseSet(hostRef, sessionId);
+      myRole = 'host';
+      window.firebaseSet(userPresenceRef, { role: 'host' });
+      roomHostId = sessionId;
+    } else {
+      if (roomHostId !== sessionId) {
+        if (myRole !== 'moderator' && myRole !== 'host') myRole = 'user';
+      }
+    }
+
+    const controls = document.getElementById('hostControls');
+    const status = document.getElementById('hostStatus');
+    if (myRole === 'host' || myRole === 'moderator') {
+      controls.style.display = 'flex';
+      status.textContent = myRole === 'host' ? 'Вы — Ведущий 👑' : 'Вы — Модератор 🛡️';
+    } else {
+      controls.style.display = 'none';
+    }
+  });
+
   window.firebaseSet(userPresenceRef, { 
     name: userName || "Гость", avatar: myAvatar, color: myColor, hat: myHat, role: myRole, joinedAt: Date.now() 
   });
@@ -308,15 +336,9 @@ window.addEventListener('firebase-ready', () => {
     const users = Object.entries(usersData);
     users.sort((a, b) => a[1].joinedAt - b[1].joinedAt);
 
-    const hasHost = users.some(([id, u]) => u.role === 'host');
-    if (!hasHost && users.length > 0 && users[0][0] === sessionId) {
-      myRole = 'host';
-      window.firebaseSet(userPresenceRef, { role: 'host' });
-    }
-
     users.forEach(([id, user]) => {
       const li = document.createElement("li");
-      const isMe = user.name === userName;
+      const isMe = id === sessionId;
       
       let roleIcon = user.role === 'host' ? '👑 ' : user.role === 'moderator' ? '🛡️ ' : '';
       let avatarHtml = user.avatar ? `<img src="${user.avatar}" class="user-list-avatar" style="border-color: ${user.color || 'var(--border)'};">` : '👤';
@@ -340,7 +362,7 @@ window.addEventListener('firebase-ready', () => {
 
   window.firebaseOnValue(userPresenceRef, (snapshot) => {
     const data = snapshot.val();
-    if (data && data.role) {
+    if (data && data.role && data.role !== myRole) {
       myRole = data.role;
       document.getElementById('hostControls').style.display = (myRole === 'host' || myRole === 'moderator') ? 'flex' : 'none';
       document.getElementById('hostStatus').textContent = myRole === 'host' ? 'Вы — Ведущий 👑' : (myRole === 'moderator' ? 'Вы — Модератор 🛡️' : '');
