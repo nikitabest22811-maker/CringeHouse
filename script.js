@@ -11,7 +11,8 @@ function getRoomId() {
 }
 
 const ROOM_ID = getRoomId();
-document.getElementById("roomId").textContent = ROOM_ID;
+// Если по какой-то причине ROOM_ID не определился, ставим заглушку, чтобы не было ошибки
+document.getElementById("roomId").textContent = ROOM_ID || "—";
 
 let userName = localStorage.getItem("wp_userName");
 let myAvatar = localStorage.getItem("wp_avatar") || "";
@@ -144,6 +145,8 @@ document.querySelectorAll(".tab").forEach((tab) => {
 // FIREBASE
 // =====================================================================
 window.addEventListener('firebase-ready', () => {
+  if (!ROOM_ID) return; // Защита
+
   const sessionId = Math.random().toString(36).substring(2, 9);
   const userPresenceRef = window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/users/${sessionId}`);
   const hostRef = window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/hostId`);
@@ -179,16 +182,19 @@ window.addEventListener('firebase-ready', () => {
             <img src="${myAvatar}" class="msg-avatar-img" style="border: none;">
             ${hatHtml}
           </div> 
-          ${userName || 'Гость'}
+          <span>${userName || 'Гость'}</span>
         `;
       } else {
-        profileBtn.textContent = `👤 ${userName || 'Гость'}`;
+        profileBtn.innerHTML = `<span style="font-size:16px;">👤</span> ${userName || 'Гость'}`;
       }
     }
   }
 
-  if (!userName) profileModal.style.display = "flex";
-  else updateProfileUI();
+  if (!userName) {
+    profileModal.style.display = "flex";
+  } else {
+    updateProfileUI();
+  }
 
   colorPickerInput.addEventListener("input", (e) => { tempColor = e.target.value; applyPreviewStyles(); });
 
@@ -290,31 +296,19 @@ window.addEventListener('firebase-ready', () => {
     addSystemMessage(`🚫 Пользователь удален из комнаты.`);
   };
 
-    // --- 3. ОПРЕДЕЛЕНИЕ РОЛИ И УЧАСТНИКИ ---
-  
-  // Слушаем хоста
+  // --- 3. ОПРЕДЕЛЕНИЕ РОЛИ И УЧАСТНИКИ ---
   window.firebaseOnValue(hostRef, (snapshot) => {
     roomHostId = snapshot.val();
     
-    // Если хоста нет и у нас есть имя — становимся хостом
     if (!roomHostId && userName) {
       window.firebaseSet(hostRef, sessionId);
       myRole = 'host';
       roomHostId = sessionId;
-      
-      // Обновляем себя в базе с ролью хоста
-      window.firebaseSet(userPresenceRef, { 
-        name: userName, avatar: myAvatar, color: myColor, hat: myHat, role: 'host', joinedAt: Date.now() 
-      });
-    } 
-    // Если хост есть, но это не мы, мы — участник
-    else if (roomHostId && roomHostId !== sessionId) {
-      if (myRole !== 'moderator' && myRole !== 'host') {
-        myRole = 'user';
-      }
+      window.firebaseSet(userPresenceRef, { role: 'host' });
+    } else if (roomHostId && roomHostId !== sessionId) {
+      if (myRole !== 'moderator' && myRole !== 'host') myRole = 'user';
     }
 
-    // Обновляем UI (панель)
     const controls = document.getElementById('hostControls');
     const status = document.getElementById('hostStatus');
     if (myRole === 'host' || myRole === 'moderator') {
@@ -325,14 +319,42 @@ window.addEventListener('firebase-ready', () => {
     }
   });
 
-  // Отправляем себя в список, если есть имя
   if (userName) {
     window.firebaseSet(userPresenceRef, { 
       name: userName, avatar: myAvatar, color: myColor, hat: myHat, role: myRole, joinedAt: Date.now() 
     });
   }
+  
+  const systemMessagesRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/messages');
+  if (userName) {
+    window.firebasePush(systemMessagesRef, {
+      author: "Система", text: `👋 ${userName} присоединился`, timestamp: Date.now(), isSystem: true
+    });
+  }
+
+  window.onDisconnect(userPresenceRef).remove();
+  const disconnectMessageRef = window.firebasePush(systemMessagesRef); 
+  window.onDisconnect(disconnectMessageRef).set({
+    author: "Система", text: `🚪 ${userName || "Гость"} покинул комнату`, timestamp: Date.now(), isSystem: true
+  });
+
+  const usersListRef = window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/users`);
+  const usersListElement = document.getElementById("usersList");
+
+  window.firebaseOnValue(usersListRef, (snapshot) => {
+    const usersData = snapshot.val();
+    if (!usersData) { usersListElement.innerHTML = '<li style="color: var(--text-muted); font-style: italic;">Пока никого нет...</li>'; return; }
+    usersListElement.innerHTML = ""; 
+    const users = Object.entries(usersData);
+    users.sort((a, b) => a[1].joinedAt - b[1].joinedAt);
+
+    users.forEach(([id, user]) => {
+      const li = document.createElement("li");
+      const isMe = id === sessionId;
       
-      // Защита от пустого имени
+      let roleIcon = user.role === 'host' ? '👑 ' : user.role === 'moderator' ? '🛡️ ' : '';
+      let avatarHtml = user.avatar ? `<img src="${user.avatar}" class="user-list-avatar" style="border-color: ${user.color || 'var(--border)'};">` : '👤';
+      
       const displayName = user.name || "Неизвестный";
       li.innerHTML = `${avatarHtml} <span>${roleIcon}${displayName} ${isMe ? '<span style="color: var(--accent); font-size: 12px;">(Вы)</span>' : ''}</span>`;
       
