@@ -238,6 +238,13 @@ window.addEventListener('firebase-ready', () => {
       localStorage.setItem("wp_avatar", myAvatar);
     }
 
+    // Если пользователь только что ввел имя, а хоста в комнате нет — он становится ведущим
+    if (!roomHostId) {
+      window.firebaseSet(hostRef, sessionId);
+      myRole = 'host';
+    }
+
+    // Отправляем в базу уже с именем
     window.firebaseSet(userPresenceRef, { 
       name: userName, avatar: myAvatar, color: myColor, hat: myHat, role: myRole, joinedAt: Date.now() 
     });
@@ -288,15 +295,13 @@ window.addEventListener('firebase-ready', () => {
   window.firebaseOnValue(hostRef, (snapshot) => {
     roomHostId = snapshot.val();
     
-    if (!roomHostId) {
+    if (!roomHostId && userName) {
       window.firebaseSet(hostRef, sessionId);
       myRole = 'host';
       window.firebaseSet(userPresenceRef, { role: 'host' });
       roomHostId = sessionId;
-    } else {
-      if (roomHostId !== sessionId) {
-        if (myRole !== 'moderator' && myRole !== 'host') myRole = 'user';
-      }
+    } else if (roomHostId && roomHostId !== sessionId) {
+      if (myRole !== 'moderator' && myRole !== 'host') myRole = 'user';
     }
 
     const controls = document.getElementById('hostControls');
@@ -309,9 +314,12 @@ window.addEventListener('firebase-ready', () => {
     }
   });
 
-  window.firebaseSet(userPresenceRef, { 
-    name: userName || "Гость", avatar: myAvatar, color: myColor, hat: myHat, role: myRole, joinedAt: Date.now() 
-  });
+  // Отправляем в список только если есть имя
+  if (userName) {
+    window.firebaseSet(userPresenceRef, { 
+      name: userName, avatar: myAvatar, color: myColor, hat: myHat, role: myRole, joinedAt: Date.now() 
+    });
+  }
   
   const systemMessagesRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/messages');
   if (userName) {
@@ -342,7 +350,9 @@ window.addEventListener('firebase-ready', () => {
       
       let roleIcon = user.role === 'host' ? '👑 ' : user.role === 'moderator' ? '🛡️ ' : '';
       let avatarHtml = user.avatar ? `<img src="${user.avatar}" class="user-list-avatar" style="border-color: ${user.color || 'var(--border)'};">` : '👤';
-      li.innerHTML = `${avatarHtml} <span>${roleIcon}${user.name} ${isMe ? '<span style="color: var(--accent); font-size: 12px;">(Вы)</span>' : ''}</span>`;
+      // Защита от undefined
+      const displayName = user.name || "Гость";
+      li.innerHTML = `${avatarHtml} <span>${roleIcon}${displayName} ${isMe ? '<span style="color: var(--accent); font-size: 12px;">(Вы)</span>' : ''}</span>`;
       
       li.addEventListener("click", () => {
         selectedUserId = id;
@@ -350,7 +360,7 @@ window.addEventListener('firebase-ready', () => {
         viewAvatarWrapper.style.borderColor = user.color || "var(--accent)";
         viewHat.textContent = user.hat || "";
         viewHat.style.display = user.hat ? "block" : "none";
-        viewName.textContent = user.name + (isMe ? " (Вы)" : "");
+        viewName.textContent = displayName + (isMe ? " (Вы)" : "");
         
         adminControls.style.display = (myRole === 'host' && !isMe) ? "flex" : "none";
         userProfileModal.style.display = "flex";
@@ -494,7 +504,7 @@ window.addEventListener('firebase-ready', () => {
       }
     }
 
-    el.innerHTML = `<div class="msg-author">${avatarHtml} ${data.author}</div><div class="msg-text">${data.text}</div><div class="msg-reactions-display">${reactionsHtml}</div>`;
+    el.innerHTML = `<div class="msg-author">${avatarHtml} ${data.author || "Гость"}</div><div class="msg-text">${data.text}</div><div class="msg-reactions-display">${reactionsHtml}</div>`;
     
     if (data.avatar) {
       el.querySelector('.chat-avatar-container').addEventListener('click', (e) => {
@@ -502,7 +512,7 @@ window.addEventListener('firebase-ready', () => {
         viewAvatar.src = data.avatar;
         viewAvatarWrapper.style.borderColor = data.color || "var(--accent)";
         viewHat.textContent = data.hat || ""; viewHat.style.display = data.hat ? "block" : "none";
-        viewName.textContent = data.author + (isMe ? " (Вы)" : "");
+        viewName.textContent = (data.author || "Гость") + (isMe ? " (Вы)" : "");
         userProfileModal.style.display = "flex";
       });
     }
