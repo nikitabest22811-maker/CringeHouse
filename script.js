@@ -290,39 +290,31 @@ window.addEventListener('firebase-ready', () => {
     addSystemMessage(`🚫 Пользователь удален из комнаты.`);
   };
 
-  // --- 3. ОПРЕДЕЛЕНИЕ РОЛИ И УЧАСТНИКИ ---
+    // --- 3. ОПРЕДЕЛЕНИЕ РОЛИ И УЧАСТНИКИ ---
   
-  // Если имя уже есть в localStorage, сразу отправляем в базу (автозагрузка)
-  if (userName) {
-    window.firebaseOnValue(hostRef, (snap) => {
-      if (!snap.val()) {
-        window.firebaseSet(hostRef, sessionId);
-        myRole = 'host';
-      }
-      
-      window.firebaseSet(userPresenceRef, { 
-        name: userName, 
-        avatar: myAvatar, 
-        color: myColor, 
-        hat: myHat, 
-        role: myRole, 
-        joinedAt: Date.now() 
-      });
-    }, { onlyOnce: true });
-  }
-
+  // Слушаем хоста
   window.firebaseOnValue(hostRef, (snapshot) => {
     roomHostId = snapshot.val();
     
+    // Если хоста нет и у нас есть имя — становимся хостом
     if (!roomHostId && userName) {
       window.firebaseSet(hostRef, sessionId);
       myRole = 'host';
-      window.firebaseSet(userPresenceRef, { role: 'host' });
       roomHostId = sessionId;
-    } else if (roomHostId && roomHostId !== sessionId) {
-      if (myRole !== 'moderator' && myRole !== 'host') myRole = 'user';
+      
+      // Обновляем себя в базе с ролью хоста
+      window.firebaseSet(userPresenceRef, { 
+        name: userName, avatar: myAvatar, color: myColor, hat: myHat, role: 'host', joinedAt: Date.now() 
+      });
+    } 
+    // Если хост есть, но это не мы, мы — участник
+    else if (roomHostId && roomHostId !== sessionId) {
+      if (myRole !== 'moderator' && myRole !== 'host') {
+        myRole = 'user';
+      }
     }
 
+    // Обновляем UI (панель)
     const controls = document.getElementById('hostControls');
     const status = document.getElementById('hostStatus');
     if (myRole === 'host' || myRole === 'moderator') {
@@ -333,35 +325,12 @@ window.addEventListener('firebase-ready', () => {
     }
   });
 
-  const systemMessagesRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/messages');
+  // Отправляем себя в список, если есть имя
   if (userName) {
-    window.firebasePush(systemMessagesRef, {
-      author: "Система", text: `👋 ${userName} присоединился`, timestamp: Date.now(), isSystem: true
+    window.firebaseSet(userPresenceRef, { 
+      name: userName, avatar: myAvatar, color: myColor, hat: myHat, role: myRole, joinedAt: Date.now() 
     });
   }
-
-  window.onDisconnect(userPresenceRef).remove();
-  const disconnectMessageRef = window.firebasePush(systemMessagesRef); 
-  window.onDisconnect(disconnectMessageRef).set({
-    author: "Система", text: `🚪 ${userName || "Гость"} покинул комнату`, timestamp: Date.now(), isSystem: true
-  });
-
-  const usersListRef = window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/users`);
-  const usersListElement = document.getElementById("usersList");
-
-  window.firebaseOnValue(usersListRef, (snapshot) => {
-    const usersData = snapshot.val();
-    if (!usersData) { usersListElement.innerHTML = '<li style="color: var(--text-muted); font-style: italic;">Пока никого нет...</li>'; return; }
-    usersListElement.innerHTML = ""; 
-    const users = Object.entries(usersData);
-    users.sort((a, b) => a[1].joinedAt - b[1].joinedAt);
-
-    users.forEach(([id, user]) => {
-      const li = document.createElement("li");
-      const isMe = id === sessionId;
-      
-      let roleIcon = user.role === 'host' ? '👑 ' : user.role === 'moderator' ? '🛡️ ' : '';
-      let avatarHtml = user.avatar ? `<img src="${user.avatar}" class="user-list-avatar" style="border-color: ${user.color || 'var(--border)'};">` : '👤';
       
       // Защита от пустого имени
       const displayName = user.name || "Неизвестный";
