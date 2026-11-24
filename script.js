@@ -19,6 +19,37 @@ let myColor = localStorage.getItem("wp_color") || "#7c5cff";
 let myHat = localStorage.getItem("wp_hat") || "";
 let myRole = "user";
 let roomHostId = null;
+let myXp = parseInt(localStorage.getItem("wp_xp")) || 0;
+
+// --- Функция уровней ---
+function getLevelInfo(xp) {
+  const level = Math.floor(xp / 100) + 1;
+  const progress = xp % 100;
+  
+  let title = "Новичок";
+  let frameColor = "#7c5cff";
+  
+  if (level >= 20) { title = "Бог CringeHouse"; frameColor = "#00ffcc"; }
+  else if (level >= 15) { title = "Легенда"; frameColor = "#ffd700"; }
+  else if (level >= 10) { title = "Кинокритик"; frameColor = "#c0c0c0"; }
+  else if (level >= 5) { title = "Завсегдатай"; frameColor = "#cd7f32"; }
+  else if (level >= 3) { title = "Зритель"; }
+  
+  return { level, progress, title, frameColor };
+}
+
+// Функция начисления XP
+function gainXp(amount) {
+  myXp += amount;
+  localStorage.setItem("wp_xp", myXp);
+  
+  const newLevel = Math.floor(myXp / 100) + 1;
+  const oldLevel = Math.floor((myXp - amount) / 100) + 1;
+  
+  if (newLevel > oldLevel) {
+    addSystemMessage(`🎉 Поздравляем! Вы достигли ${newLevel} уровня!`);
+  }
+}
 
 // --- ТЕМЫ ---
 const themes = ['', 'theme-light', 'theme-neon', 'theme-midnight'];
@@ -50,11 +81,10 @@ document.querySelectorAll(".theme-card").forEach(card => {
   });
 });
 
-// --- Парсинг ссылок (ВКЛЮЧАЯ SHORTS) ---
+// --- Парсинг ссылок (Shorts) ---
 function parseVideoUrl(url) {
   url = url.trim();
   if (!url) return null;
-  // Регулярка теперь ищет shorts
   const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
   if (ytMatch) return { type: "youtube", id: ytMatch[1] };
   return { type: "unknown", url };
@@ -106,7 +136,6 @@ document.getElementById("loadVideo").addEventListener("click", () => {
   const parsed = parseVideoUrl(url);
   if (!parsed || parsed.type !== 'youtube') { alert("Поддерживается только YouTube"); return; }
 
-  // Проверяем, является ли это Shorts
   const isShorts = url.includes('/shorts/');
   const playerContainer = document.getElementById("player");
   
@@ -155,7 +184,7 @@ document.querySelectorAll(".tab").forEach((tab) => {
 // FIREBASE
 // =====================================================================
 window.addEventListener('firebase-ready', () => {
-  if (!ROOM_ID) return; // Защита
+  if (!ROOM_ID) return;
 
   const sessionId = Math.random().toString(36).substring(2, 9);
   const userPresenceRef = window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/users/${sessionId}`);
@@ -171,24 +200,26 @@ window.addEventListener('firebase-ready', () => {
   
   const avatarPreviewContainer = document.getElementById("avatarPreviewContainer");
   const hatPreview = document.getElementById("hatPreview");
-  const colorPickerInput = document.getElementById("colorPickerInput");
   const hatPicker = document.getElementById("hatPicker");
 
-  let tempColor = myColor;
   let tempHat = myHat;
 
   function applyPreviewStyles() {
-    avatarPreviewContainer.style.borderColor = tempColor;
+    const levelInfo = getLevelInfo(myXp);
+    avatarPreviewContainer.style.borderColor = levelInfo.frameColor;
+    avatarPreviewContainer.style.boxShadow = `0 0 15px ${levelInfo.frameColor}`;
+    
     if (tempHat) { hatPreview.textContent = tempHat; hatPreview.style.display = "block"; }
     else { hatPreview.style.display = "none"; }
   }
 
   function updateProfileUI() {
     if (profileBtn) {
+      const levelInfo = getLevelInfo(myXp);
       if (myAvatar) {
         const hatHtml = myHat ? `<div class="header-hat">${myHat}</div>` : '';
         profileBtn.innerHTML = `
-          <div class="header-avatar-container" style="border-color: ${myColor};">
+          <div class="header-avatar-container" style="border-color: ${levelInfo.frameColor}; box-shadow: 0 0 10px ${levelInfo.frameColor};">
             <img src="${myAvatar}" class="msg-avatar-img" style="border: none;">
             ${hatHtml}
           </div> 
@@ -205,8 +236,6 @@ window.addEventListener('firebase-ready', () => {
   } else {
     updateProfileUI();
   }
-
-  colorPickerInput.addEventListener("input", (e) => { tempColor = e.target.value; applyPreviewStyles(); });
 
   hatPicker.querySelectorAll(".hat-option").forEach(opt => {
     opt.addEventListener("click", () => {
@@ -229,9 +258,14 @@ window.addEventListener('firebase-ready', () => {
   profileBtn.addEventListener("click", () => {
     modalNameInput.value = userName || "";
     modalAvatarPreview.src = myAvatar || "";
-    tempColor = myColor;
     tempHat = myHat;
-    colorPickerInput.value = myColor;
+    
+    const levelInfo = getLevelInfo(myXp);
+    document.getElementById("modalLevelText").textContent = `Уровень ${levelInfo.level}`;
+    document.getElementById("modalXpText").textContent = `${levelInfo.progress} / 100 XP`;
+    document.getElementById("modalXpBar").style.width = `${levelInfo.progress}%`;
+    document.getElementById("modalTitleText").textContent = `Титул: ${levelInfo.title}`;
+    
     hatPicker.querySelectorAll(".hat-option").forEach(o => { o.classList.toggle("selected", o.dataset.hat === myHat); });
     applyPreviewStyles();
     profileModal.style.display = "flex";
@@ -242,11 +276,9 @@ window.addEventListener('firebase-ready', () => {
     if (!newName) { alert("Введите никнейм!"); return; }
     
     userName = newName;
-    myColor = tempColor;
     myHat = tempHat;
     
     localStorage.setItem("wp_userName", userName);
-    localStorage.setItem("wp_color", myColor);
     localStorage.setItem("wp_hat", myHat);
 
     if (modalAvatarPreview.src && modalAvatarPreview.src !== myAvatar) {
@@ -254,14 +286,13 @@ window.addEventListener('firebase-ready', () => {
       localStorage.setItem("wp_avatar", myAvatar);
     }
 
-    // Если хоста нет, становимся им
     if (!roomHostId) {
       window.firebaseSet(hostRef, sessionId);
       myRole = 'host';
     }
 
     window.firebaseSet(userPresenceRef, { 
-      name: userName, avatar: myAvatar, color: myColor, hat: myHat, role: myRole, joinedAt: Date.now() 
+      name: userName, avatar: myAvatar, color: myColor, hat: myHat, role: myRole, xp: myXp, joinedAt: Date.now() 
     });
     
     updateProfileUI();
@@ -331,7 +362,7 @@ window.addEventListener('firebase-ready', () => {
 
   if (userName) {
     window.firebaseSet(userPresenceRef, { 
-      name: userName, avatar: myAvatar, color: myColor, hat: myHat, role: myRole, joinedAt: Date.now() 
+      name: userName, avatar: myAvatar, color: myColor, hat: myHat, role: myRole, xp: myXp, joinedAt: Date.now() 
     });
   }
   
@@ -393,7 +424,7 @@ window.addEventListener('firebase-ready', () => {
     }
   });
 
-  // --- 4. ОЧЕРЕДЬ (с поддержкой Shorts) ---
+  // --- 4. ОЧЕРЕДЬ ---
   const queueRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/queue');
   const queueList = document.getElementById('queueList');
   const queueInput = document.getElementById('queueInput');
@@ -425,6 +456,7 @@ window.addEventListener('firebase-ready', () => {
     if (!parsed || parsed.type !== 'youtube') { alert("Только YouTube!"); return; }
     
     const isShorts = url.includes('/shorts/');
+    gainXp(10); // Начисляем XP за добавление в очередь
 
     window.firebasePush(queueRef, {
       videoId: parsed.id, 
@@ -518,10 +550,13 @@ window.addEventListener('firebase-ready', () => {
     const isMe = data.author === userName;
     if (isMe) el.classList.add("my-message");
 
+    const authorXp = data.xp || 0;
+    const authorLevel = getLevelInfo(authorXp);
+
     let avatarHtml = '';
     if (data.avatar) {
       const hatHtml = data.hat ? `<div class="chat-hat" style="font-size: 18px;">${data.hat}</div>` : '';
-      avatarHtml = `<div class="chat-avatar-container"><img src="${data.avatar}" class="msg-avatar-img" style="border-color: ${data.color || 'var(--border)'};">${hatHtml}</div>`;
+      avatarHtml = `<div class="chat-avatar-container" style="border: 2px solid ${authorLevel.frameColor}; box-shadow: 0 0 5px ${authorLevel.frameColor}; border-radius: 50%;"><img src="${data.avatar}" class="msg-avatar-img" style="border: none;">${hatHtml}</div>`;
     } else { avatarHtml = '👤'; }
 
     let reactionsHtml = '';
@@ -540,7 +575,7 @@ window.addEventListener('firebase-ready', () => {
       el.querySelector('.chat-avatar-container').addEventListener('click', (e) => {
         e.stopPropagation();
         viewAvatar.src = data.avatar;
-        viewAvatarWrapper.style.borderColor = data.color || "var(--accent)";
+        viewAvatarWrapper.style.borderColor = authorLevel.frameColor;
         viewHat.textContent = data.hat || ""; viewHat.style.display = data.hat ? "block" : "none";
         viewName.textContent = (data.author || "Гость") + (isMe ? " (Вы)" : "");
         userProfileModal.style.display = "flex";
@@ -577,10 +612,14 @@ window.addEventListener('firebase-ready', () => {
     e.preventDefault();
     const text = chatInput.value.trim();
     if (!text) return;
+    
+    gainXp(5); // Начисляем XP за сообщение
+
     window.firebasePush(messagesRef, { 
-      author: userName || "Гость", avatar: myAvatar, color: myColor, hat: myHat,
+      author: userName || "Гость", avatar: myAvatar, color: myColor, hat: myHat, xp: myXp,
       text: text, timestamp: Date.now(), reactions: {}
     });
+    
     chatInput.value = "";
   });
 

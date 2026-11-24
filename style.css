@@ -3,6 +3,7 @@
 :root {
   --bg: #0f0f14; --panel: #1a1a22; --panel-2: #23232e; --border: #2e2e3a;
   --text: #e8e8ee; --text-muted: #8a8a99; --accent: #7c5cff; --accent-2: #ff5c8a; --radius: 12px;
+  --gold: #ffd700;
 }
 body.theme-light {
   --bg: #f0f2f5; --panel: #ffffff; --panel-2: #e4e6eb; --border: #ccd0d5;
@@ -49,7 +50,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
   background: #000;
 }
 #player.shorts-mode iframe {
-  max-width: 500px !important; /* Ограничиваем ширину для вертикального формата */
+  max-width: 500px !important;
   width: 100% !important;
   height: 100% !important;
   margin: 0 auto;
@@ -149,7 +150,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 #copyLink { transition: all 0.3s; }
 #copyLink.copied { background: #4caf50 !important; color: white; }
 
-/* Сетка для выбора тем */
+/* Стили для выбора тем */
 .theme-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
 .theme-card { background: var(--panel-2); border: 2px solid var(--border); border-radius: var(--radius); padding: 10px; cursor: pointer; text-align: center; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .theme-card:hover { transform: translateY(-3px); border-color: var(--accent); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
@@ -159,6 +160,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 .theme-preview-neon .theme-preview-bg { background: linear-gradient(135deg, #050505, #1a1a1a); color: #00ffcc; border-color: #00ffcc; }
 .theme-preview-midnight .theme-preview-bg { background: linear-gradient(135deg, #0a1128, #121c3d); color: #4d7cff; }
 .theme-card.active { border-color: var(--accent); box-shadow: 0 0 15px rgba(124, 92, 255, 0.3); }
+
+/* Стили для рамок по уровням */
+.frame-bronze { border-color: #cd7f32 !important; box-shadow: 0 0 10px #cd7f32; }
+.frame-silver { border-color: #c0c0c0 !important; box-shadow: 0 0 15px #c0c0c0; }
+.frame-gold { border-color: #ffd700 !important; box-shadow: 0 0 20px #ffd700; }
+.frame-neon { border-color: #00ffcc !important; box-shadow: 0 0 25px #00ffcc; }
 
 /* Анимация скримера */
 @keyframes shake {

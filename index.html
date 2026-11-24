@@ -6,7 +6,7 @@
   <title>📺 CringeHouse</title>
   
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="style.css?v=59">
+  <link rel="stylesheet" href="style.css?v=61">
 </head>
 <body>
   <div class="app">
@@ -34,7 +34,6 @@
           <div id="videoLoader" class="video-loader" style="display: none;">
             <div class="spinner"></div>
           </div>
-          <!-- Сюда API вставит iframe, класс shorts-mode добавится автоматически -->
           <div id="player"></div>
         </div>
         
@@ -76,7 +75,7 @@
             <div id="queueList" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;"></div>
             
             <div style="display: flex; gap: 5px; margin-top: 10px;">
-              <input type="text" id="queueInput" placeholder="Ссылка на YouTube (видео или Shorts)..." style="flex: 1; padding: 8px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text);">
+              <input type="text" id="queueInput" placeholder="Ссылка на YouTube..." style="flex: 1; padding: 8px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text);">
               <button id="addToQueueBtn" class="btn btn-small btn-primary">+</button>
             </div>
           </div>
@@ -89,6 +88,19 @@
   <div id="profileModal" class="modal-overlay" style="display: none;">
     <div class="modal-content">
       <h3>Настройка профиля</h3>
+
+      <!-- Блок с уровнем и опытом -->
+      <div class="level-info" style="margin-bottom: 20px; background: var(--panel-2); padding: 15px; border-radius: var(--radius);">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+          <span style="font-weight: bold; color: var(--gold);" id="modalLevelText">Уровень 1</span>
+          <span style="font-size: 12px; color: var(--text-muted);" id="modalXpText">0 / 100 XP</span>
+        </div>
+        <div style="width: 100%; height: 10px; background: var(--border); border-radius: 5px; overflow: hidden;">
+          <div id="modalXpBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width 0.3s;"></div>
+        </div>
+        <p style="font-size: 12px; color: var(--text-muted); margin-top: 10px; text-align: center;" id="modalTitleText">Титул: Новичок</p>
+      </div>
+      
       <div class="avatar-upload-container">
         <div class="avatar-customizer" id="avatarPreviewContainer">
           <img id="modalAvatarPreview" src="" alt="Аватар" class="avatar-preview">
@@ -100,10 +112,6 @@
       <div class="form-group">
         <label>Ваш никнейм:</label>
         <input type="text" id="modalNameInput" class="modal-input" placeholder="Введите имя...">
-      </div>
-      <div class="form-group">
-        <label>Цвет рамки:</label>
-        <input type="color" id="colorPickerInput" value="#7c5cff" style="width: 100%; height: 40px; cursor: pointer; border: 1px solid var(--border); border-radius: 8px; background: var(--panel-2);">
       </div>
       <div class="form-group">
         <label>Аксессуар:</label>
@@ -198,6 +206,6 @@
   </script>
 
   <!-- 3. Основной скрипт -->
-  <script src="script.js?v=59"></script>
+  <script src="script.js?v=61"></script>
 </body>
 </html>
