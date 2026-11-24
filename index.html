@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
@@ -6,7 +6,7 @@
   <title>📺 CringeHouse</title>
   
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="style.css?v=50">
+  <link rel="stylesheet" href="style.css?v=51">
 </head>
 <body>
   <div class="app">
@@ -36,21 +36,27 @@
           </div>
           <div id="player"></div>
         </div>
+        
+        <!-- Панель управления (видна только ведущему/модератору) -->
+        <div id="hostControls" class="host-controls" style="display: none;">
+          <button id="hostPlayPause" class="btn btn-small">⏯ Пауза/Плей</button>
+          <button id="hostSkip" class="btn btn-small" style="background: var(--accent-2); border: none; color: white;">⏭ Пропустить</button>
+          <span id="hostStatus" style="margin-left: auto; font-size: 12px; color: var(--text-muted);">Вы — Ведущий 👑</span>
+        </div>
       </section>
 
-      <!-- Правая панель: чат и участники -->
+      <!-- Правая панель: чат, участники, очередь -->
       <aside class="sidebar">
         <div class="tabs">
           <button class="tab active" data-tab="chat">💬 Чат</button>
           <button class="tab" data-tab="users">👥 Участники</button>
+          <button class="tab" data-tab="queue">📋 Очередь</button>
         </div>
 
         <!-- Вкладка ЧАТ -->
         <div class="tab-content active" id="chatTab">
           <div class="chat-messages" id="chatMessages"></div>
-          
           <div id="emojiPicker" style="display: none;"></div>
-
           <form class="chat-form" id="chatForm" onsubmit="return false;">
             <button type="button" id="emojiBtn" class="btn btn-small" style="padding: 0 10px; background: var(--panel-2); border: none; font-size: 18px;">😀</button>
             <input type="text" id="chatInput" placeholder="Написать сообщение...">
@@ -62,15 +68,26 @@
         <div class="tab-content" id="usersTab">
           <ul class="users-list" id="usersList"></ul>
         </div>
+
+        <!-- Вкладка ОЧЕРЕДЬ -->
+        <div class="tab-content" id="queueTab">
+          <div style="padding: 16px; display: flex; flex-direction: column; height: 100%;">
+            <div id="queueList" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;"></div>
+            
+            <div style="display: flex; gap: 5px; margin-top: 10px;">
+              <input type="text" id="queueInput" placeholder="Ссылка на YouTube..." style="flex: 1; padding: 8px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text);">
+              <button id="addToQueueBtn" class="btn btn-small btn-primary">+</button>
+            </div>
+          </div>
+        </div>
       </aside>
     </main>
   </div>
 
-  <!-- Модальное окно настройки своего профиля -->
+  <!-- Модальное окно профиля -->
   <div id="profileModal" class="modal-overlay" style="display: none;">
     <div class="modal-content">
       <h3>Настройка профиля</h3>
-      
       <div class="avatar-upload-container">
         <div class="avatar-customizer" id="avatarPreviewContainer">
           <img id="modalAvatarPreview" src="" alt="Аватар" class="avatar-preview">
@@ -79,21 +96,18 @@
         <label for="avatarFileInput" class="btn btn-small" style="cursor: pointer;">Загрузить фото</label>
         <input type="file" id="avatarFileInput" accept="image/*" style="display: none;">
       </div>
-
       <div class="form-group">
         <label>Ваш никнейм:</label>
         <input type="text" id="modalNameInput" class="modal-input" placeholder="Введите имя...">
       </div>
-
       <div class="form-group">
         <label>Цвет рамки:</label>
         <input type="color" id="colorPickerInput" value="#7c5cff" style="width: 100%; height: 40px; cursor: pointer; border: 1px solid var(--border); border-radius: 8px; background: var(--panel-2);">
       </div>
-
       <div class="form-group">
-        <label>Аксессуар (на голову):</label>
+        <label>Аксессуар:</label>
         <div class="hat-picker" id="hatPicker">
-          <div class="hat-option selected" data-hat="">Без шляпы</div>
+          <div class="hat-option selected" data-hat="">Без</div>
           <div class="hat-option" data-hat="🎩">🎩</div>
           <div class="hat-option" data-hat="👑">👑</div>
           <div class="hat-option" data-hat="🧢">🧢</div>
@@ -102,24 +116,28 @@
           <div class="hat-option" data-hat="🎃">🎃</div>
         </div>
       </div>
-
       <div class="modal-actions">
         <button id="saveProfileBtn" class="btn btn-primary">Сохранить</button>
       </div>
     </div>
   </div>
 
-  <!-- Модальное окно просмотра профиля участника -->
+  <!-- Модальное окно просмотра профиля участника и управления -->
   <div id="userProfileModal" class="modal-overlay" style="display: none;">
     <div class="modal-content profile-view-modal">
       <button id="closeUserProfileBtn" class="close-user-btn">✕</button>
-      
       <div class="avatar-view-wrapper" id="viewAvatarWrapper">
         <img id="viewAvatar" src="" alt="Аватар" class="view-avatar">
         <div id="viewHat" class="hat-preview view-hat" style="display: none;"></div>
       </div>
-      
       <h2 id="viewName"></h2>
+      
+      <!-- Кнопки управления (только для ведущего) -->
+      <div id="adminControls" style="margin-top: 20px; display: none; flex-direction: column; gap: 10px; width: 100%;">
+        <button id="makeHostBtn" class="btn btn-small" style="background: #ffd700; color: black; border: none;">👑 Сделать ведущим</button>
+        <button id="makeModBtn" class="btn btn-small" style="background: #00b4d8; color: black; border: none;">🛡️ Сделать модератором</button>
+        <button id="kickBtn" class="btn btn-small" style="background: #ff0000; color: white; border: none;">🚫 Выгнать</button>
+      </div>
     </div>
   </div>
 
@@ -128,22 +146,10 @@
     <div class="modal-content" style="max-width: 500px;">
       <h3>Выберите тему</h3>
       <div class="theme-grid">
-        <div class="theme-card theme-preview-default" data-theme="0">
-          <div class="theme-preview-bg">Aa</div>
-          <span>Стандартная</span>
-        </div>
-        <div class="theme-card theme-preview-light" data-theme="1">
-          <div class="theme-preview-bg">Aa</div>
-          <span>Светлая</span>
-        </div>
-        <div class="theme-card theme-preview-neon" data-theme="2">
-          <div class="theme-preview-bg">Aa</div>
-          <span>Неон</span>
-        </div>
-        <div class="theme-card theme-preview-midnight" data-theme="3">
-          <div class="theme-preview-bg">Aa</div>
-          <span>Полночь</span>
-        </div>
+        <div class="theme-card theme-preview-default" data-theme="0"><div class="theme-preview-bg">Aa</div><span>Стандарт</span></div>
+        <div class="theme-card theme-preview-light" data-theme="1"><div class="theme-preview-bg">Aa</div><span>Светлая</span></div>
+        <div class="theme-card theme-preview-neon" data-theme="2"><div class="theme-preview-bg">Aa</div><span>Неон</span></div>
+        <div class="theme-card theme-preview-midnight" data-theme="3"><div class="theme-preview-bg">Aa</div><span>Полночь</span></div>
       </div>
       <div class="modal-actions">
         <button id="closeThemeModalBtn" class="btn">Закрыть</button>
@@ -163,7 +169,7 @@
   <!-- 2. Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-    import { getDatabase, ref, push, onChildAdded, set, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+    import { getDatabase, ref, push, onChildAdded, set, onValue, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBMnGQXMxJWUGALmNGVItNWKB5ubSiyg5M",
@@ -185,11 +191,12 @@
     window.firebaseSet = set;
     window.firebaseOnValue = onValue;
     window.onDisconnect = onDisconnect;
+    window.firebaseRemove = remove;
 
     window.dispatchEvent(new Event('firebase-ready'));
   </script>
 
   <!-- 3. Основной скрипт -->
-  <script src="script.js?v=50"></script>
+  <script src="script.js?v=51"></script>
 </body>
 </html>

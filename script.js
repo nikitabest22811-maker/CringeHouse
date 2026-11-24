@@ -17,6 +17,7 @@ let userName = localStorage.getItem("wp_userName");
 let myAvatar = localStorage.getItem("wp_avatar") || "";
 let myColor = localStorage.getItem("wp_color") || "#7c5cff";
 let myHat = localStorage.getItem("wp_hat") || "";
+let myRole = "user";
 
 // --- ТЕМЫ ---
 const themes = ['', 'theme-light', 'theme-neon', 'theme-midnight'];
@@ -27,40 +28,28 @@ const themeBtn = document.getElementById("themeBtn");
 const themeModal = document.getElementById("themeModal");
 const closeThemeModalBtn = document.getElementById("closeThemeModalBtn");
 
-if (themeBtn) {
-  themeBtn.addEventListener("click", () => {
-    themeModal.style.display = "flex";
-    document.querySelectorAll(".theme-card").forEach(card => {
-      card.classList.toggle("active", parseInt(card.dataset.theme) === currentThemeIndex);
-    });
+if (themeBtn) themeBtn.addEventListener("click", () => {
+  themeModal.style.display = "flex";
+  document.querySelectorAll(".theme-card").forEach(card => {
+    card.classList.toggle("active", parseInt(card.dataset.theme) === currentThemeIndex);
   });
-}
-
+});
 if (closeThemeModalBtn) {
-  closeThemeModalBtn.addEventListener("click", () => {
-    themeModal.style.display = "none";
-  });
-  themeModal.addEventListener("click", (e) => {
-    if (e.target === themeModal) themeModal.style.display = "none";
-  });
+  closeThemeModalBtn.addEventListener("click", () => { themeModal.style.display = "none"; });
+  themeModal.addEventListener("click", (e) => { if (e.target === themeModal) themeModal.style.display = "none"; });
 }
-
 document.querySelectorAll(".theme-card").forEach(card => {
   card.addEventListener("click", () => {
-    const themeIndex = parseInt(card.dataset.theme);
-    currentThemeIndex = themeIndex;
-    
+    currentThemeIndex = parseInt(card.dataset.theme);
     document.body.className = themes[currentThemeIndex];
     localStorage.setItem("wp_theme", currentThemeIndex);
-    
     document.querySelectorAll(".theme-card").forEach(c => c.classList.remove("active"));
     card.classList.add("active");
-    
     setTimeout(() => { themeModal.style.display = "none"; }, 300);
   });
 });
 
-// ---------- Парсинг ссылок ----------
+// --- Парсинг ссылок ---
 function parseVideoUrl(url) {
   url = url.trim();
   if (!url) return null;
@@ -69,7 +58,7 @@ function parseVideoUrl(url) {
   return { type: "unknown", url };
 }
 
-// ---------- Системные сообщения ----------
+// --- Системные сообщения ---
 function addSystemMessage(text) {
   const el = document.createElement("div");
   el.className = "chat-message";
@@ -78,7 +67,7 @@ function addSystemMessage(text) {
   document.getElementById("chatMessages").scrollTop = document.getElementById("chatMessages").scrollHeight;
 }
 
-// ---------- Инициализация YouTube ----------
+// --- Инициализация YouTube ---
 let ytPlayer = null;
 let isRemoteAction = false;
 
@@ -103,8 +92,12 @@ function onPlayerStateChange(event) {
   });
 }
 
-// ---------- Загрузка видео ----------
+// --- Загрузка видео ---
 document.getElementById("loadVideo").addEventListener("click", () => {
+  if (myRole !== 'host' && myRole !== 'moderator') {
+    alert("Только ведущий или модератор может запускать видео!");
+    return;
+  }
   const url = document.getElementById("videoUrl").value;
   if (!ytPlayer) { alert("Плеер ещё загружается."); return; }
   const parsed = parseVideoUrl(url);
@@ -116,19 +109,17 @@ document.getElementById("loadVideo").addEventListener("click", () => {
   ytPlayer.loadVideoById(parsed.id);
   setTimeout(() => { if (loader) loader.style.display = "none"; }, 3000);
 
-  if (typeof window.firebaseSet !== 'undefined') {
-      window.firebaseSet(window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/videoState'), {
-        videoId: parsed.id, state: 1, time: 0, timestamp: Date.now()
-      });
-  }
-  addSystemMessage(`▶ Загружено видео: ${url}`);
+  window.firebaseSet(window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/videoState'), {
+    videoId: parsed.id, state: 1, time: 0, timestamp: Date.now()
+  });
+  addSystemMessage(`▶ Ведущий запустил видео: ${url}`);
 });
 
 document.getElementById("videoUrl").addEventListener("keypress", (e) => {
   if (e.key === "Enter") document.getElementById("loadVideo").click();
 });
 
-// ---------- Копирование и Табы ----------
+// --- Копирование и Табы ---
 document.getElementById("copyLink").addEventListener("click", () => {
   const inviteText = `🎬 Залетай в CringeHouse! Будем смотреть кино вместе: ${window.location.href}`;
   navigator.clipboard.writeText(inviteText).then(() => {
@@ -172,12 +163,8 @@ window.addEventListener('firebase-ready', () => {
 
   function applyPreviewStyles() {
     avatarPreviewContainer.style.borderColor = tempColor;
-    if (tempHat) {
-      hatPreview.textContent = tempHat;
-      hatPreview.style.display = "block";
-    } else {
-      hatPreview.style.display = "none";
-    }
+    if (tempHat) { hatPreview.textContent = tempHat; hatPreview.style.display = "block"; }
+    else { hatPreview.style.display = "none"; }
   }
 
   function updateProfileUI() {
@@ -200,10 +187,7 @@ window.addEventListener('firebase-ready', () => {
   if (!userName) profileModal.style.display = "flex";
   else updateProfileUI();
 
-  colorPickerInput.addEventListener("input", (e) => {
-    tempColor = e.target.value;
-    applyPreviewStyles();
-  });
+  colorPickerInput.addEventListener("input", (e) => { tempColor = e.target.value; applyPreviewStyles(); });
 
   hatPicker.querySelectorAll(".hat-option").forEach(opt => {
     opt.addEventListener("click", () => {
@@ -226,15 +210,10 @@ window.addEventListener('firebase-ready', () => {
   profileBtn.addEventListener("click", () => {
     modalNameInput.value = userName || "";
     modalAvatarPreview.src = myAvatar || "";
-    
     tempColor = myColor;
     tempHat = myHat;
-    
     colorPickerInput.value = myColor;
-    hatPicker.querySelectorAll(".hat-option").forEach(o => {
-      o.classList.toggle("selected", o.dataset.hat === myHat);
-    });
-    
+    hatPicker.querySelectorAll(".hat-option").forEach(o => { o.classList.toggle("selected", o.dataset.hat === myHat); });
     applyPreviewStyles();
     profileModal.style.display = "flex";
   });
@@ -257,7 +236,7 @@ window.addEventListener('firebase-ready', () => {
     }
 
     window.firebaseSet(userPresenceRef, { 
-      name: userName, avatar: myAvatar, color: myColor, hat: myHat, joinedAt: Date.now() 
+      name: userName, avatar: myAvatar, color: myColor, hat: myHat, role: myRole, joinedAt: Date.now() 
     });
     
     updateProfileUI();
@@ -265,50 +244,45 @@ window.addEventListener('firebase-ready', () => {
     addSystemMessage(`✏️ Профиль обновлен: ${userName}`);
   };
 
-  // --- 2. ПРОСМОТР ПРОФИЛЯ УЧАСТНИКА ---
+  // --- 2. ПРОСМОТР ПРОФИЛЯ И РОЛИ ---
   const userProfileModal = document.getElementById("userProfileModal");
   const closeUserProfileBtn = document.getElementById("closeUserProfileBtn");
   const viewAvatar = document.getElementById("viewAvatar");
   const viewName = document.getElementById("viewName");
   const viewAvatarWrapper = document.getElementById("viewAvatarWrapper");
   const viewHat = document.getElementById("viewHat");
+  const adminControls = document.getElementById("adminControls");
+
+  let selectedUserId = null;
 
   closeUserProfileBtn.onclick = () => { userProfileModal.style.display = "none"; };
-  userProfileModal.addEventListener("click", (e) => {
-    if (e.target === userProfileModal) userProfileModal.style.display = "none";
-  });
+  userProfileModal.addEventListener("click", (e) => { if (e.target === userProfileModal) userProfileModal.style.display = "none"; });
 
-  // --- 2.5. СКРИМЕР ---
-  const scareBtn = document.getElementById("scareBtn");
-  const scareScreen = document.getElementById("scareScreen");
-  const scareAudio = document.getElementById("scareAudio");
-  const scareRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/scare');
+  document.getElementById("makeHostBtn").onclick = () => {
+    if (myRole !== 'host' || !selectedUserId) return;
+    window.firebaseSet(window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/users/${selectedUserId}/role`), 'host');
+    window.firebaseSet(userPresenceRef, { role: 'moderator' }); 
+    userProfileModal.style.display = "none";
+    addSystemMessage(`👑 Права ведущего переданы!`);
+  };
 
-  if (scareBtn) {
-    scareBtn.addEventListener("click", () => {
-      window.firebaseSet(scareRef, { timestamp: Date.now(), by: userName });
-      addSystemMessage(`💀 ${userName} решил напугать всех!`);
-    });
-  }
+  document.getElementById("makeModBtn").onclick = () => {
+    if (myRole !== 'host' || !selectedUserId) return;
+    window.firebaseSet(window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/users/${selectedUserId}/role`), 'moderator');
+    userProfileModal.style.display = "none";
+    addSystemMessage(`🛡️ Назначен новый модератор!`);
+  };
 
-  if (scareRef) {
-    window.firebaseOnValue(scareRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data && data.timestamp && (Date.now() - data.timestamp < 3000)) {
-        scareScreen.style.display = "flex";
-        scareAudio.currentTime = 0;
-        scareAudio.play().catch(e => console.log("Звук заблокирован:", e));
-        setTimeout(() => {
-          scareScreen.style.display = "none";
-          scareAudio.pause();
-        }, 3000); 
-      }
-    });
-  }
+  document.getElementById("kickBtn").onclick = () => {
+    if (myRole !== 'host' || !selectedUserId) return;
+    window.firebaseSet(window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/users/${selectedUserId}`), null);
+    userProfileModal.style.display = "none";
+    addSystemMessage(`🚫 Пользователь удален из комнаты.`);
+  };
 
   // --- 3. УЧАСТНИКИ ---
   window.firebaseSet(userPresenceRef, { 
-    name: userName || "Гость", avatar: myAvatar, color: myColor, hat: myHat, joinedAt: Date.now() 
+    name: userName || "Гость", avatar: myAvatar, color: myColor, hat: myHat, role: myRole, joinedAt: Date.now() 
   });
   
   const systemMessagesRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/messages');
@@ -329,33 +303,34 @@ window.addEventListener('firebase-ready', () => {
 
   window.firebaseOnValue(usersListRef, (snapshot) => {
     const usersData = snapshot.val();
-    if (!usersData) {
-      usersListElement.innerHTML = '<li style="color: var(--text-muted); font-style: italic;">Пока никого нет...</li>';
-      return;
-    }
+    if (!usersData) { usersListElement.innerHTML = '<li style="color: var(--text-muted); font-style: italic;">Пока никого нет...</li>'; return; }
     usersListElement.innerHTML = ""; 
-    const users = Object.values(usersData);
-    users.sort((a, b) => a.joinedAt - b.joinedAt);
+    const users = Object.entries(usersData);
+    users.sort((a, b) => a[1].joinedAt - b[1].joinedAt);
 
-    users.forEach((user) => {
+    const hasHost = users.some(([id, u]) => u.role === 'host');
+    if (!hasHost && users.length > 0 && users[0][0] === sessionId) {
+      myRole = 'host';
+      window.firebaseSet(userPresenceRef, { role: 'host' });
+    }
+
+    users.forEach(([id, user]) => {
       const li = document.createElement("li");
       const isMe = user.name === userName;
       
+      let roleIcon = user.role === 'host' ? '👑 ' : user.role === 'moderator' ? '🛡️ ' : '';
       let avatarHtml = user.avatar ? `<img src="${user.avatar}" class="user-list-avatar" style="border-color: ${user.color || 'var(--border)'};">` : '👤';
-      li.innerHTML = `${avatarHtml} <span>${user.name} ${isMe ? '<span style="color: var(--accent); font-size: 12px;">(Вы)</span>' : ''}</span>`;
+      li.innerHTML = `${avatarHtml} <span>${roleIcon}${user.name} ${isMe ? '<span style="color: var(--accent); font-size: 12px;">(Вы)</span>' : ''}</span>`;
       
       li.addEventListener("click", () => {
+        selectedUserId = id;
         viewAvatar.src = user.avatar || "https://via.placeholder.com/150x150?text=No+Photo";
         viewAvatarWrapper.style.borderColor = user.color || "var(--accent)";
-        
-        if (user.hat) {
-          viewHat.textContent = user.hat;
-          viewHat.style.display = "block";
-        } else {
-          viewHat.style.display = "none";
-        }
-        
+        viewHat.textContent = user.hat || "";
+        viewHat.style.display = user.hat ? "block" : "none";
         viewName.textContent = user.name + (isMe ? " (Вы)" : "");
+        
+        adminControls.style.display = (myRole === 'host' && !isMe) ? "flex" : "none";
         userProfileModal.style.display = "flex";
       });
 
@@ -363,12 +338,72 @@ window.addEventListener('firebase-ready', () => {
     });
   });
 
-  // --- 4. СИНХРОНИЗАЦИЯ ВИДЕО ---
+  window.firebaseOnValue(userPresenceRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data && data.role) {
+      myRole = data.role;
+      document.getElementById('hostControls').style.display = (myRole === 'host' || myRole === 'moderator') ? 'flex' : 'none';
+      document.getElementById('hostStatus').textContent = myRole === 'host' ? 'Вы — Ведущий 👑' : (myRole === 'moderator' ? 'Вы — Модератор 🛡️' : '');
+    }
+  });
+
+  // --- 4. ОЧЕРЕДЬ ---
+  const queueRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/queue');
+  const queueList = document.getElementById('queueList');
+  const queueInput = document.getElementById('queueInput');
+  const addToQueueBtn = document.getElementById('addToQueueBtn');
+
+  window.firebaseOnValue(queueRef, (snapshot) => {
+    const queueData = snapshot.val();
+    if (!queueData) { queueList.innerHTML = '<p style="color: var(--text-muted); font-size: 12px;">Очередь пуста...</p>'; return; }
+    queueList.innerHTML = '';
+    Object.entries(queueData).forEach(([id, item]) => {
+      const div = document.createElement('div');
+      div.className = 'queue-item';
+      const removeBtn = (myRole === 'host' || myRole === 'moderator') ? `<button class="queue-item-remove" onclick="removeFromQueue('${id}')">✕</button>` : '';
+      div.innerHTML = `
+        <div class="queue-item-info">
+          <span class="queue-item-title">🎬 ${item.title || 'Видео'}</span>
+          <span class="queue-item-author">Предложил: ${item.addedBy}</span>
+        </div>
+        ${removeBtn}
+      `;
+      queueList.appendChild(div);
+    });
+  });
+
+  addToQueueBtn.addEventListener('click', () => {
+    const url = queueInput.value.trim();
+    if (!url) return;
+    const parsed = parseVideoUrl(url);
+    if (!parsed || parsed.type !== 'youtube') { alert("Только YouTube!"); return; }
+    window.firebasePush(queueRef, {
+      videoId: parsed.id, title: "Видео " + parsed.id.substring(0, 4), addedBy: userName || "Гость", timestamp: Date.now()
+    });
+    queueInput.value = "";
+  });
+
+  window.removeFromQueue = function(id) {
+    if (myRole !== 'host' && myRole !== 'moderator') return;
+    window.firebaseSet(window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/queue/${id}`), null);
+  };
+
+  document.getElementById('hostSkip').addEventListener('click', () => {
+    if (myRole !== 'host' && myRole !== 'moderator') return;
+    window.firebaseOnValue(queueRef, (snap) => {
+      const items = Object.entries(snap.val() || {});
+      if (items.length > 0) {
+        ytPlayer.loadVideoById(items[0][1].videoId);
+        window.firebaseSet(window.firebaseRef(window.firebaseDB, `rooms/${ROOM_ID}/queue/${items[0][0]}`), null);
+      } else { alert("Очередь пуста!"); }
+    }, { onlyOnce: true });
+  });
+
+  // --- 5. СИНХРОНИЗАЦИЯ ВИДЕО ---
   const videoStateRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/videoState');
   window.firebaseOnValue(videoStateRef, (snapshot) => {
     const data = snapshot.val();
     if (!data || !data.videoId || !ytPlayer) return;
-
     const currentVideoId = ytPlayer.getVideoData().video_id;
     if (currentVideoId !== data.videoId) {
       isRemoteAction = true;
@@ -379,16 +414,12 @@ window.addEventListener('firebase-ready', () => {
       }, 1000);
       return;
     }
-
     const currentState = ytPlayer.getPlayerState();
-    if (data.state === 2 && currentState === 1) { 
-      isRemoteAction = true; ytPlayer.pauseVideo(); ytPlayer.seekTo(data.time);
-    } else if (data.state === 1 && currentState === 2) { 
-      isRemoteAction = true; ytPlayer.seekTo(data.time); ytPlayer.playVideo();
-    }
+    if (data.state === 2 && currentState === 1) { isRemoteAction = true; ytPlayer.pauseVideo(); ytPlayer.seekTo(data.time); }
+    else if (data.state === 1 && currentState === 2) { isRemoteAction = true; ytPlayer.seekTo(data.time); ytPlayer.playVideo(); }
   });
 
-  // --- 5. ЧАТ ---
+  // --- 6. ЧАТ ---
   const chatMessages = document.getElementById("chatMessages");
   const chatForm = document.getElementById("chatForm");
   const chatInput = document.getElementById("chatInput");
@@ -414,66 +445,41 @@ window.addEventListener('firebase-ready', () => {
 
   function renderMessage(msgId, data) {
     if (document.getElementById(`msg-${msgId}`)) return;
-
     const el = document.createElement("div");
     el.className = "chat-message";
     el.id = `msg-${msgId}`;
     
     if (data.isSystem) {
       el.innerHTML = `<div class="msg-system">${data.text}</div>`;
-      chatMessages.appendChild(el);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-      return;
+      chatMessages.appendChild(el); chatMessages.scrollTop = chatMessages.scrollHeight; return;
     }
-
     const isMe = data.author === userName;
     if (isMe) el.classList.add("my-message");
 
     let avatarHtml = '';
     if (data.avatar) {
       const hatHtml = data.hat ? `<div class="chat-hat" style="font-size: 18px;">${data.hat}</div>` : '';
-      avatarHtml = `
-        <div class="chat-avatar-container">
-          <img src="${data.avatar}" class="msg-avatar-img" style="border-color: ${data.color || 'var(--border)'};">
-          ${hatHtml}
-        </div>
-      `;
-    } else {
-      avatarHtml = '👤';
-    }
+      avatarHtml = `<div class="chat-avatar-container"><img src="${data.avatar}" class="msg-avatar-img" style="border-color: ${data.color || 'var(--border)'};">${hatHtml}</div>`;
+    } else { avatarHtml = '👤'; }
 
     let reactionsHtml = '';
     if (data.reactions) {
       const reactionCounts = {};
-      Object.values(data.reactions).forEach(emoji => {
-        reactionCounts[emoji] = (reactionCounts[emoji] || 0) + 1;
-      });
-
+      Object.values(data.reactions).forEach(emoji => { reactionCounts[emoji] = (reactionCounts[emoji] || 0) + 1; });
       for (const [emoji, count] of Object.entries(reactionCounts)) {
         const myReaction = data.reactions[sessionId] === emoji;
         reactionsHtml += `<div class="reaction-badge ${myReaction ? 'my-reaction' : ''}" onclick="window.toggleReaction('${msgId}', '${emoji}')">${emoji} ${count}</div>`;
       }
     }
 
-    el.innerHTML = `
-      <div class="msg-author">${avatarHtml} ${data.author}</div>
-      <div class="msg-text">${data.text}</div>
-      <div class="msg-reactions-display">${reactionsHtml}</div>
-    `;
+    el.innerHTML = `<div class="msg-author">${avatarHtml} ${data.author}</div><div class="msg-text">${data.text}</div><div class="msg-reactions-display">${reactionsHtml}</div>`;
     
     if (data.avatar) {
       el.querySelector('.chat-avatar-container').addEventListener('click', (e) => {
         e.stopPropagation();
         viewAvatar.src = data.avatar;
         viewAvatarWrapper.style.borderColor = data.color || "var(--accent)";
-        
-        if (data.hat) {
-          viewHat.textContent = data.hat;
-          viewHat.style.display = "block";
-        } else {
-          viewHat.style.display = "none";
-        }
-        
+        viewHat.textContent = data.hat || ""; viewHat.style.display = data.hat ? "block" : "none";
         viewName.textContent = data.author + (isMe ? " (Вы)" : "");
         userProfileModal.style.display = "flex";
       });
@@ -509,12 +515,10 @@ window.addEventListener('firebase-ready', () => {
     e.preventDefault();
     const text = chatInput.value.trim();
     if (!text) return;
-    
     window.firebasePush(messagesRef, { 
       author: userName || "Гость", avatar: myAvatar, color: myColor, hat: myHat,
       text: text, timestamp: Date.now(), reactions: {}
     });
-    
     chatInput.value = "";
   });
 
@@ -523,7 +527,7 @@ window.addEventListener('firebase-ready', () => {
     window.firebaseSet(reactionRef, emoji);
   };
 
-  // --- 6. ЭМОДЗИ ---
+  // --- 7. ЭМОДЗИ ---
   const emojiList = [
     '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾', '👋', '🤚', '🖐', '✋', '🖖', '👌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '🔥', '💯', '💢', '💥', '💫', '💦', '💨', '🕳', '💣', '💬', '👁️‍🗨️'
   ];
@@ -536,10 +540,7 @@ window.addEventListener('firebase-ready', () => {
     emojiList.forEach(emoji => {
       const span = document.createElement('span');
       span.textContent = emoji;
-      span.addEventListener('click', () => {
-        chatInputElement.value += emoji; 
-        chatInputElement.focus();        
-      });
+      span.addEventListener('click', () => { chatInputElement.value += emoji; chatInputElement.focus(); });
       emojiPicker.appendChild(span);
     });
     emojiBtn.addEventListener('click', (e) => {
