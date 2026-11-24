@@ -238,13 +238,12 @@ window.addEventListener('firebase-ready', () => {
       localStorage.setItem("wp_avatar", myAvatar);
     }
 
-    // Если пользователь только что ввел имя, а хоста в комнате нет — он становится ведущим
+    // Если хоста нет, становимся им
     if (!roomHostId) {
       window.firebaseSet(hostRef, sessionId);
       myRole = 'host';
     }
 
-    // Отправляем в базу уже с именем
     window.firebaseSet(userPresenceRef, { 
       name: userName, avatar: myAvatar, color: myColor, hat: myHat, role: myRole, joinedAt: Date.now() 
     });
@@ -292,6 +291,26 @@ window.addEventListener('firebase-ready', () => {
   };
 
   // --- 3. ОПРЕДЕЛЕНИЕ РОЛИ И УЧАСТНИКИ ---
+  
+  // Если имя уже есть в localStorage, сразу отправляем в базу (автозагрузка)
+  if (userName) {
+    window.firebaseOnValue(hostRef, (snap) => {
+      if (!snap.val()) {
+        window.firebaseSet(hostRef, sessionId);
+        myRole = 'host';
+      }
+      
+      window.firebaseSet(userPresenceRef, { 
+        name: userName, 
+        avatar: myAvatar, 
+        color: myColor, 
+        hat: myHat, 
+        role: myRole, 
+        joinedAt: Date.now() 
+      });
+    }, { onlyOnce: true });
+  }
+
   window.firebaseOnValue(hostRef, (snapshot) => {
     roomHostId = snapshot.val();
     
@@ -314,13 +333,6 @@ window.addEventListener('firebase-ready', () => {
     }
   });
 
-  // Отправляем в список только если есть имя
-  if (userName) {
-    window.firebaseSet(userPresenceRef, { 
-      name: userName, avatar: myAvatar, color: myColor, hat: myHat, role: myRole, joinedAt: Date.now() 
-    });
-  }
-  
   const systemMessagesRef = window.firebaseRef(window.firebaseDB, 'rooms/' + ROOM_ID + '/messages');
   if (userName) {
     window.firebasePush(systemMessagesRef, {
@@ -350,8 +362,9 @@ window.addEventListener('firebase-ready', () => {
       
       let roleIcon = user.role === 'host' ? '👑 ' : user.role === 'moderator' ? '🛡️ ' : '';
       let avatarHtml = user.avatar ? `<img src="${user.avatar}" class="user-list-avatar" style="border-color: ${user.color || 'var(--border)'};">` : '👤';
-      // Защита от undefined
-      const displayName = user.name || "Гость";
+      
+      // Защита от пустого имени
+      const displayName = user.name || "Неизвестный";
       li.innerHTML = `${avatarHtml} <span>${roleIcon}${displayName} ${isMe ? '<span style="color: var(--accent); font-size: 12px;">(Вы)</span>' : ''}</span>`;
       
       li.addEventListener("click", () => {
